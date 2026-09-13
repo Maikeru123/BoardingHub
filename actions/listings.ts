@@ -31,9 +31,12 @@ export async function saveListing(
         .single()
     : await supabase.from("listings").insert(parsed.data).select("id").single()
   if (result.error) return { error: databaseError(result.error) }
-  revalidatePath("/", "layout")
+  revalidatePath("/owner/listings")
+  revalidatePath(`/owner/listings/${result.data.id}`)
+  revalidatePath("/owner")
+  revalidatePath("/admin/listings")
   return {
-    success: "Listing saved. Add photos before submitting for review.",
+    success: "Draft saved. Add a primary photo, then submit for review.",
     redirectTo: `/owner/listings/${result.data.id}`,
   }
 }

@@ -47,7 +47,6 @@ function useAuthSubmit(action: (values: unknown) => Promise<ActionResult>) {
         setResult(response)
         if (response.redirectTo) {
           router.push(response.redirectTo)
-          router.refresh()
         }
       } catch {
         setResult({ error: "Unable to connect. Please try again." })

@@ -1,9 +1,13 @@
 import { spawnSync } from "node:child_process"
 import { writeFileSync } from "node:fs"
+import { fileURLToPath } from "node:url"
+const cliEntry = fileURLToPath(
+  new URL("../node_modules/supabase/dist/supabase.js", import.meta.url)
+)
 const result = spawnSync(
-  process.platform === "win32" ? "npx.cmd" : "npx",
-  ["supabase", "gen", "types", "typescript", "--linked", "--schema", "public"],
-  { encoding: "utf8", shell: process.platform === "win32" }
+  process.execPath,
+  [cliEntry, "gen", "types", "typescript", "--linked", "--schema", "public"],
+  { encoding: "utf8" }
 )
 if (result.status !== 0 || !result.stdout.includes("export type Database")) {
   process.stderr.write(

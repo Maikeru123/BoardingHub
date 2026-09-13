@@ -20,11 +20,13 @@ export function ActionButton({
   children,
   confirmation,
   variant = "outline",
+  disabled = false,
 }: {
   action: () => Promise<ActionResult>
   children: React.ReactNode
   confirmation?: string
   variant?: "default" | "outline" | "destructive" | "ghost"
+  disabled?: boolean
 }) {
   const [pending, startTransition] = useTransition()
   const [open, setOpen] = useState(false)
@@ -35,14 +37,20 @@ export function ActionButton({
     })
   if (!confirmation)
     return (
-      <Button variant={variant} disabled={pending} onClick={execute}>
+      <Button
+        variant={variant}
+        disabled={pending || disabled}
+        onClick={execute}
+      >
         {pending && <LoaderCircle className="animate-spin" />}
         {children}
       </Button>
     )
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
-      <AlertDialogTrigger render={<Button variant={variant} />}>
+      <AlertDialogTrigger
+        render={<Button variant={variant} disabled={pending || disabled} />}
+      >
         {children}
       </AlertDialogTrigger>
       <AlertDialogContent>
@@ -52,7 +60,7 @@ export function ActionButton({
         </AlertDialogHeader>
         <AlertDialogFooter>
           <AlertDialogCancel disabled={pending}>Cancel</AlertDialogCancel>
-          <AlertDialogAction disabled={pending} onClick={execute}>
+          <AlertDialogAction disabled={pending || disabled} onClick={execute}>
             {pending ? "Saving…" : "Confirm"}
           </AlertDialogAction>
         </AlertDialogFooter>

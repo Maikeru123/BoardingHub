@@ -33,7 +33,7 @@ export function ListingForm({
       >
         <FormSection
           title="Listing information"
-          description="Save your listing, add photos, then submit it for administrator review."
+          description="Step 1 of 2: save a draft. On the next page, add photos and submit it for administrator review."
         >
           <div className="sm:col-span-2">
             <FormField
@@ -68,7 +68,7 @@ export function ListingForm({
           pending={form.formState.isSubmitting}
           error={error}
           cancel="/owner/listings"
-          title="Save listing"
+          title={listing ? "Save draft" : "Save draft and continue"}
         />
       </form>
     </Form>

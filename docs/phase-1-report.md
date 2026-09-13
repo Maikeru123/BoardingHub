@@ -1,6 +1,6 @@
 # BoardingHub Phase 1 completion report
 
-Phase 1 is implemented in the local project. Live Supabase provisioning and authenticated end-to-end testing remain dependent on the developer's credentials and hosted Auth settings. No remote migrations were applied, no remote bucket was created during this session, and no Phase 2 workflows were implemented.
+Phase 1 is implemented. On 2026-09-13, both migrations were applied to the linked Supabase project after the implementation was pushed to GitHub as commit `8c284f6`. The private photo bucket and schema are provisioned, and the configured public API connection has been verified. Hosted Auth/email delivery still requires deployment-specific configuration. No Phase 2 workflows were implemented.
 
 1. **Files created**
 
@@ -23,7 +23,7 @@ Phase 1 is implemented in the local project. Live Supabase provisioning and auth
 
 4. **Storage bucket created/required**
 
-   `listing-photos` is created by migration 002 when applied. It is private, allows JPEG/PNG/WebP, and limits each image to 5 MB. Object paths are `<owner UUID>/<listing UUID>/<random UUID>.<extension>`. Uploads validate image signatures server-side. Listings support up to 12 photos, primary selection, and removal with automatic primary replacement.
+   `listing-photos` was created remotely by migration 002. It is private, allows JPEG/PNG/WebP, and limits each image to 5 MB. Object paths are `<owner UUID>/<listing UUID>/<random UUID>.<extension>`. Uploads validate image signatures server-side. Listings support up to 12 photos, primary selection, and removal with automatic primary replacement.
 
    Storage RLS verifies ownership and editable listing status. No object-update policy permits replacing an approved image. Public access is limited to photos linked to published listings on active properties belonging to active owners. Pages obtain signed URLs valid for five minutes and do not send private images through Next's shared image optimizer. An already-issued signed URL can remain valid until it expires after a listing is withdrawn or an owner is suspended.
 
@@ -63,15 +63,15 @@ Phase 1 is implemented in the local project. Live Supabase provisioning and auth
 
 7. **Environment variables required**
 
-   - `NEXT_PUBLIC_SUPABASE_URL=https://ixueqmjobwzwkhcxktag.supabase.co`
+   - `NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co`
    - `NEXT_PUBLIC_SUPABASE_ANON_KEY=<developer-configured public anon key>`
    - `NEXT_PUBLIC_SITE_URL=http://localhost:3000` locally, or the production HTTPS origin for email redirects.
 
-   `.env.example` is committed as a template; `.env.local` and CLI credentials are ignored. No credentials were fabricated or copied into the repository.
+   Real configuration is kept in ignored `.env.local`. Examples contain placeholders only. `NEXT_PUBLIC_SUPABASE_ANON_KEY` accepts a public publishable key as well as a legacy anon key. `BOARDINGHUB_ADMIN_EMAIL` configures the trusted seed script locally. CLI credentials remain outside version control.
 
 8. **Remaining manual Supabase setup**
 
-   Add the public key locally, authenticate/link the CLI, and run the migrations. Set hosted email authentication, Site URL, redirect allowlist, and confirmation/recovery email templates as described in the [README](../README.md). Configure production SMTP. Register and confirm the first administrator normally, then promote that exact Auth UUID through a trusted SQL session or `supabase/bootstrap-admin.sql`. No table or bucket needs manual dashboard creation.
+   The local public key, CLI link, migrations, and bucket provisioning are complete. Set hosted email authentication, Site URL, redirect allowlist, and confirmation/recovery email templates as described in the [README](../README.md). Configure production SMTP. Run `npm run db:seed:admin` to provision the locally configured administrator through the trusted CLI and Auth Admin API. The seed stores a generated initial password only in the Git-ignored `.admin-credentials.local.json`, preserves existing credentials, and refuses unconfirmed or suspended existing accounts. Additional administrators can be promoted by exact confirmed Auth UUID through `supabase/bootstrap-admin.sql`. No table or bucket needs manual dashboard creation.
 
 9. **Exact migration commands**
 
@@ -80,7 +80,7 @@ Phase 1 is implemented in the local project. Live Supabase provisioning and auth
    ```powershell
    npm ci
    npx supabase login
-   npx supabase link --project-ref ixueqmjobwzwkhcxktag
+   npx supabase link --project-ref your-project-id
    npx supabase db push --linked --dry-run
    npx supabase db push --linked
    npx supabase migration list --linked
@@ -91,7 +91,13 @@ Phase 1 is implemented in the local project. Live Supabase provisioning and auth
 
 10. **Verification results and testing checklist**
 
-    Completed locally: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass. Tests include three validation tests and twelve database scenarios (thirteen reported tests including the parent suite), plus eight passing Playwright checks across desktop and mobile. Browser coverage includes responsive overflow checks, navigation/search, registration account types and password mismatch validation, anonymous protected-route redirects, password recovery navigation, invalid callback redirects, and 404s. No live project credentials were available; Docker/PostgreSQL executables were absent, so the database suite used PGlite with minimal Supabase Auth/Storage scaffolding.
+    Completed locally: `npm run typecheck`, `npm run lint`, `npm test`, and `npm run build` pass. Tests include three validation tests and thirteen database scenarios (fourteen reported tests including the parent suite), plus eight passing Playwright checks across desktop and mobile. Browser coverage includes responsive overflow checks, navigation/search, registration account types and password mismatch validation, anonymous protected-route redirects, password recovery navigation, invalid callback redirects, and 404s. The database suite uses PGlite with minimal Supabase Auth/Storage scaffolding.
+
+    Live migration verification on 2026-09-13: both migration versions appear in remote history. Public API checks using the developer's configured key returned all eight amenities and confirmed that public tables are reachable, private profile/verification records are denied, and anonymous administrator review is denied. TypeScript types were regenerated from the remote schema; the nullable property-creation RPC contract is preserved in `types/supabase.ts`. The project had zero Auth users before migration, so no user accounts were changed.
+
+    Administrator provisioning on 2026-09-13: the explicit seed created the configured administrator with an active admin profile. Password sign-in and reading that admin profile with the public API key and authenticated user session succeeded. The generated initial password is stored only in the Git-ignored local credentials file. The database suite also verifies that this seed rejects missing, unconfirmed, or suspended accounts, denies execution by application users, and leaves an existing admin profile unchanged on repeat runs.
+
+    Live listing workflow regression on 2026-09-13: a temporary owner saved a draft and reached its details page in approximately 1.4 seconds; the owner and admin both saw the draft immediately on their listing pages. The test uploaded a photo, submitted the listing, verified it appeared in the admin pending queue with its photo, requested a correction, and verified the owner received the remarks. All temporary records and accounts were removed. Saving a draft now explicitly leads to photo upload and a submission checklist; duplicate client refreshes after saves/sign-in were removed. See `npm run test:e2e:workflow` for the repeatable test.
 
     After configuring the live or local Supabase stack:
 

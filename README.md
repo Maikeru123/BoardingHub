@@ -16,12 +16,12 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
    Fill in `.env.local` before starting or building the app:
 
    ```dotenv
-   NEXT_PUBLIC_SUPABASE_URL=https://ixueqmjobwzwkhcxktag.supabase.co
-   NEXT_PUBLIC_SUPABASE_ANON_KEY=YOUR_PROJECT_ANON_KEY
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-anon-key
    NEXT_PUBLIC_SITE_URL=http://localhost:3000
    ```
 
-   Use the project's public anon key. The app never needs a service role key or database password. Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS origin in production. Public environment variables must also be present at build time. Without Supabase configuration, public pages show an honest setup/empty state and protected routes lead to sign-in.
+   Replace placeholders only in ignored `.env.local` or your hosting provider's environment settings. Keep `.env.example` and documentation free of real project URLs, keys, passwords, and tokens. Use a public publishable or legacy anon key for `NEXT_PUBLIC_SUPABASE_ANON_KEY`. The app never needs a service role key or database password; those credentials must never use a `NEXT_PUBLIC_` name. Set `NEXT_PUBLIC_SITE_URL` to the canonical HTTPS origin in production. Public environment variables must also be present at build time. Without Supabase configuration, public pages show a setup/empty state and protected routes lead to sign-in.
 
 2. **Apply the migrations to the existing project**
 
@@ -29,7 +29,7 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
 
    ```powershell
    npx supabase login
-   npx supabase link --project-ref ixueqmjobwzwkhcxktag
+   npx supabase link --project-ref your-project-id
    npx supabase db push --linked --dry-run
    npx supabase db push --linked
    npx supabase migration list --linked
@@ -38,7 +38,7 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
 
    The migrations create all eight application tables, constraints, indexes, triggers, RLS, RPCs, amenities, and the private `listing-photos` bucket with its policies. Do not manually create the tables or bucket. The initial migrations expect those application tables not to exist already. Review existing migration history if the project has previously created them.
 
-   `npm run db:types` replaces `types/database.ts` only after generation succeeds. Domain aliases are kept in `types/domain.ts` so generated types can be substituted directly.
+   `npm run db:types` replaces `types/database.ts` only after generation succeeds. Domain aliases are kept in `types/domain.ts`. Clients use `types/supabase.ts` to preserve the nullable `house_id` RPC argument used when creating a property; the generator cannot infer this SQL contract.
 
 3. **Configure hosted Supabase Authentication**
 
@@ -69,12 +69,24 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
 
 4. **Bootstrap the first administrator**
 
-   Register and confirm the intended account normally. Retrieve that account's exact UUID from Supabase Auth. In a trusted SQL Editor session, run the following after replacing the placeholder:
+   Set `BOARDINGHUB_ADMIN_EMAIL` to your intended administrator's email in ignored `.env.local`. With the CLI authenticated and linked to the same project as `.env.local`, run:
+
+   ```powershell
+   npm run db:seed:admin
+   ```
+
+   This explicit seed creates a missing account using the [Supabase Auth Admin API](https://supabase.com/docs/reference/javascript/auth-admin-createuser), confirms it administratively, and assigns the `admin` role through `supabase/seed-admin.sql`. The administrative API key is read through the CLI and kept only in process memory. It is never added to the app environment. No email is sent.
+
+   A newly created account receives a random initial password saved in the Git-ignored `.admin-credentials.local.json`. Sign in at `/login`, visit `/reset-password` to choose your own password, then delete that credentials file. Rerunning the seed preserves an existing password and profile details, and refuses unconfirmed or suspended accounts. The seed is separate from migrations and ordinary registration.
+
+   For other administrators, register and confirm the intended account normally. Retrieve that account's exact UUID from Supabase Auth. In a trusted SQL Editor session, run the following after replacing the placeholder:
 
    ```sql
    update public.profiles
-   set role = 'admin', status = 'active'
+   set role = 'admin'
    where id = 'REPLACE_WITH_CONFIRMED_AUTH_USER_UUID'::uuid
+     and status = 'active'
+     and exists (select 1 from auth.users where auth.users.id = profiles.id and email_confirmed_at is not null)
    returning id, first_name, last_name, role;
    ```
 
@@ -110,10 +122,15 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
    npm test
    npm run build
    npm run test:e2e
+   npm run check:secrets
    ```
 
    Browser tests use installed Microsoft Edge on Windows. On other platforms, run `npx playwright install chromium` first. Override the browser with `PLAYWRIGHT_CHANNEL` if needed. Playwright starts a production server on port 3100, so build before running it. Run this public smoke suite against a build with no configured Supabase credentials; it does not send email or create accounts.
 
    The database suite runs the actual SQL migrations under PostgreSQL through PGlite. It supplies minimal Supabase-owned Auth/Storage scaffolding and switches database roles to check RLS. It does not replace testing GoTrue email delivery, Storage HTTP uploads, cookie refresh, and authenticated browser flows against the configured Supabase project.
+
+   With a configured production build and authenticated Supabase CLI, `npm run test:e2e:workflow` starts a temporary local server and checks draft creation, photo upload, owner submission, admin visibility, and correction feedback. This explicit live test creates temporary accounts and records in the linked project and removes its own fixtures afterward. It sends no email.
+
+   Before pushing, run `npm run check:secrets -- --staged` after staging. Add `--history` to inspect local Git history as well. The scanner reports only finding types and file locations. Ignoring a file does not untrack it or erase earlier commits. An exposed credential should be replaced through its provider; deleting its current file is insufficient. See the [repository security review](docs/security-review.md) for the recorded history finding and remaining action.
 
 The [Phase 1 completion report](docs/phase-1-report.md) contains the route inventory, RLS summary, validation results, and live testing checklist. The [file inventory](docs/phase-1-files.md) lists created and modified files.

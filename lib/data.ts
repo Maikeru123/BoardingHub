@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { uuid } from "@/lib/validation"
-import type { Database } from "@/types/database"
+import type { Database } from "@/types/supabase"
 import type { ListingDetail, Photo, Role, Row } from "@/types/domain"
 
 type Client = SupabaseClient<Database>

@@ -14,7 +14,7 @@ Paths are relative to the repository root. The four pre-existing untracked files
 - `package-lock.json`
 - `package.json`
 
-**Created files (104)**
+**Created files (110)**
 
 - `.env.example`
 - `actions/auth.ts`
@@ -98,6 +98,7 @@ Paths are relative to the repository root. The four pre-existing untracked files
 - `components/ui/textarea.tsx`
 - `docs/phase-1-files.md`
 - `docs/phase-1-report.md`
+- `docs/security-review.md`
 - `hooks/use-action-result.ts`
 - `lib/action-errors.ts`
 - `lib/auth.ts`
@@ -111,12 +112,17 @@ Paths are relative to the repository root. The four pre-existing untracked files
 - `playwright.config.ts`
 - `proxy.ts`
 - `scripts/generate-database-types.mjs`
+- `scripts/check-repository-secrets.mjs`
+- `scripts/seed-admin.mjs`
 - `supabase/bootstrap-admin.sql`
 - `supabase/config.toml`
+- `supabase/seed-admin.sql`
 - `supabase/migrations/202609120001_phase_one_schema.sql`
 - `supabase/migrations/202609120002_workflows_and_storage.sql`
 - `tests/database.test.mjs`
+- `tests/listing-workflow.test.mjs`
 - `tests/e2e/public.spec.ts`
 - `tests/validation.test.ts`
 - `types/database.ts`
 - `types/domain.ts`
+- `types/supabase.ts`

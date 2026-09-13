@@ -6,10 +6,14 @@ begin;
 select set_config('boardinghub.bootstrap_admin_id', :'admin_id', true);
 do $$
 begin
-  if not exists (select 1 from public.profiles where id = current_setting('boardinghub.bootstrap_admin_id')::uuid) then
-    raise exception 'No profile exists for the supplied Auth user UUID.';
+  if not exists (
+    select 1 from public.profiles p join auth.users u on u.id = p.id
+    where p.id = current_setting('boardinghub.bootstrap_admin_id')::uuid
+      and u.email_confirmed_at is not null and p.status = 'active'
+  ) then
+    raise exception 'A confirmed Auth user with an active profile is required.';
   end if;
-  update public.profiles set role = 'admin', status = 'active'
+  update public.profiles set role = 'admin'
     where id = current_setting('boardinghub.bootstrap_admin_id')::uuid;
 end;
 $$;

@@ -216,6 +216,11 @@ export function ListingTable({
               </TableCell>
               <TableCell>
                 <StatusBadge status={l.listing_status} />
+                {l.listing_status === "draft" && (
+                  <p className="mt-1 text-xs text-muted-foreground">
+                    Not submitted for review
+                  </p>
+                )}
               </TableCell>
               <TableCell className="text-muted-foreground">
                 {date(l.created_at)}
@@ -255,8 +260,15 @@ export function VerificationTable({
         }
         description={
           admin
-            ? "New submissions will appear here for you to review."
+            ? "Owners must add a primary photo and submit their listing for review. Saved drafts appear in All listings."
             : "Submit a listing to see its review progress and administrator remarks here."
+        }
+        action={
+          admin && (
+            <LinkButton href="/admin/listings" variant="outline">
+              View all listings
+            </LinkButton>
+          )
         }
       />
     )

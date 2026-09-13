@@ -12,7 +12,7 @@ test("Phase 1 migrations, ownership, storage policies, and review workflow", asy
     create role authenticated nologin;
     create schema auth;
     create schema storage;
-    create table auth.users (id uuid primary key, raw_user_meta_data jsonb default '{}');
+    create table auth.users (id uuid primary key, email text, email_confirmed_at timestamptz, raw_user_meta_data jsonb default '{}');
     create function auth.uid() returns uuid language sql stable as $$ select nullif(current_setting('request.jwt.claim.sub', true), '')::uuid $$;
     grant usage on schema auth, public, storage to anon, authenticated;
     grant execute on function auth.uid() to anon, authenticated;
@@ -642,6 +642,73 @@ test("Phase 1 migrations, ownership, storage policies, and review workflow", asy
         scalar("select count(*)::int from public.boarding_houses").then((n) =>
           assert.equal(n, 0)
         )
+      )
+    }
+  )
+  await t.test(
+    "admin seed requires the exact confirmed account and preserves existing state",
+    async () => {
+      const seed = await readFile(
+        new URL("../supabase/seed-admin.sql", import.meta.url),
+        "utf8"
+      )
+      await db.query(
+        "select set_config('boardinghub.seed_admin_email', $1, false)",
+        ["admin@example.com"]
+      )
+      await assert.rejects(db.exec(seed), /Create and confirm/)
+      await db.query(
+        "update auth.users set email=$1, email_confirmed_at=now() where id=$2",
+        ["another@example.com", ids.tenant]
+      )
+      await assert.rejects(db.exec(seed), /Create and confirm/)
+      assert.equal(
+        await scalar("select role from public.profiles where id=$1", [
+          ids.tenant,
+        ]),
+        "tenant"
+      )
+      await db.query(
+        "update auth.users set email=$1, email_confirmed_at=null where id=$2",
+        ["admin@example.com", ids.tenant]
+      )
+      await assert.rejects(db.exec(seed), /Create and confirm/)
+      await db.query(
+        "update auth.users set email_confirmed_at=now() where id=$1",
+        [ids.tenant]
+      )
+      await as("tenant", () =>
+        assert.rejects(db.exec(seed), /permission denied/)
+      )
+      await db.exec(seed)
+      assert.equal(
+        await scalar("select role from public.profiles where id=$1", [
+          ids.tenant,
+        ]),
+        "admin"
+      )
+      const timestamp = await scalar(
+        "select updated_at::text from public.profiles where id=$1",
+        [ids.tenant]
+      )
+      await db.exec(seed)
+      assert.equal(
+        await scalar(
+          "select updated_at::text from public.profiles where id=$1",
+          [ids.tenant]
+        ),
+        timestamp
+      )
+      await db.query(
+        "update public.profiles set status='suspended' where id=$1",
+        [ids.tenant]
+      )
+      await assert.rejects(db.exec(seed), /suspension is not overridden/)
+      assert.equal(
+        await scalar("select status from public.profiles where id=$1", [
+          ids.tenant,
+        ]),
+        "suspended"
       )
     }
   )

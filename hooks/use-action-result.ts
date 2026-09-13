@@ -17,7 +17,8 @@ export function useActionResult() {
       }
       if (result.success) toast.success(result.success)
       if (result.redirectTo) router.push(result.redirectTo)
-      router.refresh()
+      // Server Actions revalidate their affected paths and return the fresh UI.
+      // Refreshing here starts another request and can race the navigation above.
       return true
     } catch {
       const message = "Something went wrong. Please refresh and try again."
