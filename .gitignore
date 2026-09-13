@@ -30,6 +30,13 @@ pnpm-debug.log*
 
 # env files (can opt-in for committing if needed)
 .env*
+!.env.example
+
+# Supabase local state and browser test output
+supabase/.temp/
+supabase/.branches/
+test-results/
+playwright-report/
 
 # typescript
 *.tsbuildinfo
