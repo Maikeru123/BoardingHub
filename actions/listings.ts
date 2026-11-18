@@ -13,13 +13,17 @@ export async function saveListing(
   const parsed = listingSchema.safeParse(values)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   if (id && !uuid.safeParse(id).success) return { error: "Invalid listing." }
-  const { data: house } = await supabase
+  const { data: house, error: houseError } = await supabase
     .from("boarding_houses")
     .select("id")
     .eq("id", parsed.data.boarding_house_id)
     .eq("owner_id", user.id)
+    .eq("status", "active")
+    .eq("verification_status", "approved")
     .single()
-  if (!house) return { error: "Choose one of your own boarding houses." }
+  if (houseError) return { error: databaseError(houseError) }
+  if (!house)
+    return { error: "Verify the boarding house before creating a listing." }
   const result = id
     ? await supabase
         .from("listings")
@@ -36,7 +40,7 @@ export async function saveListing(
   revalidatePath("/owner")
   revalidatePath("/admin/listings")
   return {
-    success: "Draft saved. Add a primary photo, then submit for review.",
+    success: "Listing draft saved.",
     redirectTo: `/owner/listings/${result.data.id}`,
   }
 }
@@ -46,7 +50,7 @@ export async function submitListing(id: string): Promise<ActionResult> {
   const { error } = await supabase.rpc("submit_listing", { target_listing: id })
   if (error) return { error: databaseError(error) }
   revalidatePath("/", "layout")
-  return { success: "Listing submitted for administrator review." }
+  return { success: "Listing published." }
 }
 export async function reviewListing(
   id: string,

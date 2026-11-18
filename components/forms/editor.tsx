@@ -27,11 +27,13 @@ export function FormFooter({
   error,
   cancel,
   title = "Save changes",
+  pendingTitle = "Saving…",
 }: {
   pending: boolean
   error?: string
   cancel: string
   title?: string
+  pendingTitle?: string
 }) {
   return (
     <>
@@ -48,7 +50,7 @@ export function FormFooter({
         </LinkButton>
         <Button type="submit" disabled={pending} className="h-10 gap-2 px-5">
           {pending ? <LoaderCircle className="animate-spin" /> : <Save />}
-          {title}
+          {pending ? pendingTitle : title}
         </Button>
       </div>
     </>

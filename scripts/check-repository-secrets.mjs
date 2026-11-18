@@ -26,13 +26,22 @@ for (const path of [
       known.push([value, "local environment value"])
   }
 }
-if (existsSync(".admin-credentials.local.json")) {
-  const saved = JSON.parse(
-    readFileSync(".admin-credentials.local.json", "utf8")
-  )
-  for (const name of ["password", "projectRef", "email"])
-    if (saved[name])
-      known.push([saved[name], "local administrator configuration"])
+for (const path of [
+  ".admin-credentials.local.json",
+  ".seed-credentials.local.json",
+]) {
+  if (!existsSync(path)) continue
+  const saved = JSON.parse(readFileSync(path, "utf8"))
+  if (saved.projectRef)
+    known.push([saved.projectRef, "local seeded account configuration"])
+  for (const account of saved.accounts || [saved]) {
+    const secretFields = path.startsWith(".admin-")
+      ? ["password", "email"]
+      : ["password"]
+    for (const name of secretFields)
+      if (account[name])
+        known.push([account[name], "local seeded account configuration"])
+  }
 }
 const patterns = [
   ["Supabase API key", /\bsb_(?:publishable|secret)_[A-Za-z0-9_-]{16,}/],
@@ -80,7 +89,7 @@ try {
   for (const file of files) {
     if (
       (basename(file).startsWith(".env") && file !== ".env.example") ||
-      /(?:^|\/)\.admin-credentials\.local/.test(file)
+      /(?:^|\/)\.(?:admin|seed)-credentials\.local/.test(file)
     )
       report(file, "local credential file is a commit candidate")
     if (staged) scan(`index:${file}`, git("show", `:${file}`))

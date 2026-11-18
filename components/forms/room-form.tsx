@@ -1,11 +1,16 @@
 "use client"
-import { useForm } from "react-hook-form"
+import { useEffect, useState } from "react"
+import { useRouter } from "next/navigation"
+import { useForm, useWatch } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
 import { saveRoom } from "@/actions/properties"
+import { uploadRoomPhoto } from "@/actions/photos"
 import { roomSchema, type RoomInput } from "@/lib/validation"
 import { Form, FormField } from "@/components/ui/form"
 import { FormSection, FormFooter } from "./editor"
 import { useActionResult } from "@/hooks/use-action-result"
+import { NewBoardingHousePhotoPicker } from "@/components/boarding-house/new-photo-picker"
+import { toast } from "sonner"
 import type { House, Room } from "@/types/domain"
 export function RoomForm({
   room,
@@ -16,6 +21,10 @@ export function RoomForm({
   houses: House[]
   houseId?: string
 }) {
+  const router = useRouter()
+  const [photoFiles, setPhotoFiles] = useState<File[]>([])
+  const [uploadProgress, setUploadProgress] = useState(0)
+  const [photoError, setPhotoError] = useState<string>()
   const form = useForm<RoomInput>({
     resolver: zodResolver(roomSchema),
     defaultValues: {
@@ -30,17 +39,51 @@ export function RoomForm({
     },
   })
   const { run, error } = useActionResult()
+  const roomType = useWatch({ control: form.control, name: "room_type" })
+
+  useEffect(() => {
+    if (roomType === "single")
+      form.setValue("capacity", 1, { shouldValidate: true })
+  }, [form, roomType])
+
   return (
     <Form {...form}>
       <form
         className="max-w-4xl space-y-6"
         onSubmit={form.handleSubmit(async (values) => {
-          await run(() => saveRoom(room?.id || null, values))
+          setPhotoError(undefined)
+          setUploadProgress(0)
+          const result = await run(() => saveRoom(room?.id || null, values))
+          if (!result || room) return
+          const roomId = result.entityId
+          if (!roomId) {
+            setPhotoError(
+              "The room was saved, but its identifier was not returned. Open it from the rooms page to add photos."
+            )
+            router.push("/owner/rooms")
+            return
+          }
+          for (let index = 0; index < photoFiles.length; index += 1) {
+            const data = new FormData()
+            data.set("photo", photoFiles[index])
+            const upload = await uploadRoomPhoto(roomId, data)
+            if (upload.error) {
+              toast.error(upload.error)
+              router.push(`/owner/rooms/${roomId}/edit?photo-upload=retry`)
+              return
+            }
+            setUploadProgress(index + 1)
+          }
+          if (photoFiles.length)
+            toast.success(
+              `${photoFiles.length} room photo${photoFiles.length === 1 ? "" : "s"} uploaded.`
+            )
+          router.push("/owner/rooms")
         })}
       >
         <FormSection
           title="Room details"
-          description="Room changes return affected listings to draft for review."
+          description="Single rooms automatically have a capacity of one."
         >
           <FormField
             control={form.control}
@@ -75,7 +118,7 @@ export function RoomForm({
             options={[
               { value: "available", label: "Available" },
               { value: "maintenance", label: "Maintenance" },
-              { value: "inactive", label: "Inactive" },
+              { value: "archived", label: "Archived" },
             ]}
             description="General room usability. This does not indicate availability for specific dates."
           />
@@ -87,14 +130,16 @@ export function RoomForm({
             step="0.01"
             required
           />
-          <FormField
-            control={form.control}
-            name="capacity"
-            label="Capacity (people)"
-            type="number"
-            step="1"
-            required
-          />
+          {roomType !== "single" && (
+            <FormField
+              control={form.control}
+              name="capacity"
+              label="Capacity (people)"
+              type="number"
+              step="1"
+              required
+            />
+          )}
           <div className="sm:col-span-2">
             <FormField
               control={form.control}
@@ -105,11 +150,31 @@ export function RoomForm({
             />
           </div>
         </FormSection>
+        {!room && (
+          <FormSection
+            title="Room photos"
+            description="Choose up to 12 photos. They will upload automatically after the room is created."
+          >
+            <NewBoardingHousePhotoPicker
+              subject="room"
+              disabled={form.formState.isSubmitting}
+              progress={uploadProgress}
+              onFilesChange={setPhotoFiles}
+            />
+          </FormSection>
+        )}
         <FormFooter
           pending={form.formState.isSubmitting}
-          error={error}
+          error={photoError || error}
           cancel="/owner/rooms"
-          title={room ? "Save room" : "Add room"}
+          title={room ? "Save room" : "Create Room"}
+          pendingTitle={
+            room
+              ? "Saving room…"
+              : photoFiles.length
+                ? `Creating and uploading ${photoFiles.length} photo${photoFiles.length === 1 ? "" : "s"}…`
+                : "Creating room…"
+          }
         />
       </form>
     </Form>

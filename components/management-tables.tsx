@@ -1,4 +1,5 @@
 import Link from "next/link"
+import Image from "next/image"
 import { ArrowUpRight, Building2, MapPin } from "lucide-react"
 import {
   Table,
@@ -10,30 +11,48 @@ import {
 } from "@/components/ui/table"
 import { EmptyState, LinkButton, StatusBadge } from "@/components/shared"
 import { ActionButton } from "@/components/action-button"
-import { deactivateHouse, deactivateRoom } from "@/actions/properties"
+import {
+  archiveHouse,
+  archiveRoom,
+  moderateRoom,
+  restoreHouse,
+  submitBoardingHouse,
+} from "@/actions/properties"
 import { currency, date, label, address } from "@/lib/format"
-import type { House, Room, Listing, Verification } from "@/types/domain"
+import { getBoardingHouseStatus } from "@/lib/boarding-house-status"
+import type { House, Room, Listing, Photo } from "@/types/domain"
 
 export function HouseCards({
   houses,
   rooms,
+  photos,
+  listings,
   admin = false,
+  emptyTitle,
+  emptyDescription,
 }: {
   houses: House[]
-  rooms?: Room[]
+  rooms: Room[]
+  photos: Photo[]
+  listings: Listing[]
+  listingVerifications?: unknown[]
   admin?: boolean
+  emptyTitle?: string
+  emptyDescription?: string
 }) {
   if (!houses.length)
     return (
       <EmptyState
-        title="No boarding houses added yet."
+        title={emptyTitle || "No boarding houses added yet."}
         description={
-          admin
+          emptyDescription ||
+          (admin
             ? "Registered properties will appear here."
-            : "Add your first property, then set up its rooms, amenities, and listings."
+            : "Add your first property, then set up its rooms, amenities, and listings.")
         }
         action={
-          !admin && (
+          !admin &&
+          !emptyTitle && (
             <LinkButton href="/owner/boarding-houses/new">
               Add boarding house
             </LinkButton>
@@ -43,68 +62,134 @@ export function HouseCards({
     )
   return (
     <div className="grid gap-5 md:grid-cols-2 xl:grid-cols-3">
-      {houses.map((h) => (
-        <article key={h.id} className="rounded-xl border bg-card p-5">
-          <div className="mb-5 flex items-start justify-between gap-3">
-            <span className="rounded-xl bg-primary/7 p-3 text-primary">
-              <Building2 className="size-6" />
-            </span>
-            <StatusBadge status={h.status} />
-          </div>
-          <h2 className="font-semibold">{h.name}</h2>
-          <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
-            <MapPin className="mt-0.5 size-3.5 shrink-0" />
-            {address(h) || "No address provided"}
-          </p>
-          <p className="mt-4 line-clamp-2 text-xs leading-5 text-muted-foreground">
-            {h.description || "No description provided."}
-          </p>
-          <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
-            {admin ? (
-              <span className="text-xs text-muted-foreground">
-                Added {date(h.created_at)}
-              </span>
-            ) : (
-              <>
-                <Link
-                  href={`/owner/rooms?house=${h.id}`}
-                  className="text-xs text-primary"
-                >
-                  {rooms?.filter((r) => r.boarding_house_id === h.id).length ||
-                    0}{" "}
-                  rooms →
-                </Link>
-                <div className="flex items-center gap-3">
-                  <Link
-                    href={`/owner/boarding-houses/${h.id}/edit`}
-                    className="text-xs font-medium text-primary"
-                  >
-                    Edit property
-                  </Link>
-                  {h.status === "active" && (
-                    <ActionButton
-                      action={deactivateHouse.bind(null, h.id)}
-                      variant="ghost"
-                      confirmation="Deactivate this boarding house? Its listings will return to draft and disappear from public browsing."
-                    >
-                      Deactivate
-                    </ActionButton>
-                  )}
+      {houses.map((h) => {
+        const photo = photos?.find(
+          (item) => item.boarding_house_id === h.id && item.is_primary
+        )
+        const workflowStatus = getBoardingHouseStatus({
+          house: h,
+          rooms,
+          photos,
+          listings,
+        })
+        return (
+          <article
+            key={h.id}
+            className="overflow-hidden rounded-xl border bg-card"
+          >
+            <div className="relative aspect-[16/7] bg-muted">
+              {photo?.url ? (
+                <Image
+                  src={photo.url}
+                  alt={`${h.name} primary property photo`}
+                  fill
+                  unoptimized
+                  sizes="(min-width: 1280px) 30vw, (min-width: 768px) 50vw, 100vw"
+                  className="object-cover"
+                />
+              ) : (
+                <div className="flex h-full items-center justify-center">
+                  <Building2 className="size-10 text-muted-foreground/35" />
                 </div>
-              </>
-            )}
-          </div>
-        </article>
-      ))}
+              )}
+            </div>
+            <div className="p-5">
+              <div className="mb-5 flex items-start justify-between gap-3">
+                <span className="rounded-xl bg-primary/7 p-3 text-primary">
+                  <Building2 className="size-6" />
+                </span>
+                <StatusBadge status={workflowStatus} />
+              </div>
+              <h2 className="font-semibold">{h.name}</h2>
+              <p className="mt-2 flex items-start gap-1.5 text-xs leading-5 text-muted-foreground">
+                <MapPin className="mt-0.5 size-3.5 shrink-0" />
+                {address(h) || "No address provided"}
+              </p>
+              <p className="mt-4 line-clamp-2 text-xs leading-5 text-muted-foreground">
+                {h.description || "No description provided."}
+              </p>
+              {h.verification_remarks && (
+                <p className="mt-3 rounded-lg bg-amber-500/10 p-3 text-xs leading-5 text-amber-800 dark:text-amber-300">
+                  {h.verification_remarks}
+                </p>
+              )}
+              <div className="mt-5 flex flex-wrap items-center justify-between gap-3 border-t pt-4">
+                {admin ? (
+                  <span className="text-xs text-muted-foreground">
+                    Added {date(h.created_at)}
+                  </span>
+                ) : (
+                  <>
+                    <Link
+                      href={`/owner/rooms?house=${h.id}`}
+                      className="text-xs text-primary"
+                    >
+                      {rooms?.filter(
+                        (r) =>
+                          r.boarding_house_id === h.id &&
+                          r.status !== "archived"
+                      ).length || 0}{" "}
+                      rooms →
+                    </Link>
+                    <div className="flex items-center gap-3">
+                      {["draft", "rejected", "for_correction"].includes(
+                        h.verification_status
+                      ) &&
+                        Boolean(photo) && (
+                          <ActionButton
+                            action={submitBoardingHouse.bind(null, h.id)}
+                            variant="outline"
+                            confirmation="Submit this boarding house for administrator verification?"
+                          >
+                            Submit for verification
+                          </ActionButton>
+                        )}
+                      <Link
+                        href={`/owner/boarding-houses/${h.id}/edit`}
+                        className="text-xs font-medium text-primary"
+                      >
+                        Edit property
+                      </Link>
+                      {h.status === "active" ? (
+                        <ActionButton
+                          action={archiveHouse.bind(null, h.id)}
+                          variant="ghost"
+                          confirmation="Archive this boarding house? It will disappear from management and public discovery while historical data remains available."
+                        >
+                          Archive
+                        </ActionButton>
+                      ) : h.status === "archived" ? (
+                        <ActionButton
+                          action={restoreHouse.bind(null, h.id)}
+                          variant="outline"
+                          confirmation="Restore this boarding house to active property management?"
+                        >
+                          Restore
+                        </ActionButton>
+                      ) : null}
+                    </div>
+                  </>
+                )}
+              </div>
+            </div>
+          </article>
+        )
+      })}
     </div>
   )
 }
 export function RoomTable({
   rooms,
   houses,
+  occupiedRoomIds = [],
+  reservedRoomIds = [],
+  admin = false,
 }: {
   rooms: Room[]
   houses: House[]
+  occupiedRoomIds?: string[]
+  reservedRoomIds?: string[]
+  admin?: boolean
 }) {
   if (!rooms.length)
     return (
@@ -112,7 +197,8 @@ export function RoomTable({
         title="No rooms have been added."
         description="Add rooms to your boarding houses with their type, monthly rent, and capacity."
         action={
-          houses.length > 0 && (
+          !admin &&
+          houses.some((house) => house.verification_status === "approved") && (
             <LinkButton href="/owner/rooms/new">Add room</LinkButton>
           )
         }
@@ -145,23 +231,37 @@ export function RoomTable({
               <TableCell>{currency(r.monthly_rent)}</TableCell>
               <TableCell>{r.capacity}</TableCell>
               <TableCell>
-                <StatusBadge status={r.status} />
+                <StatusBadge
+                  status={
+                    occupiedRoomIds.includes(r.id)
+                      ? "occupied"
+                      : reservedRoomIds.includes(r.id)
+                        ? "future_reserved"
+                        : r.status
+                  }
+                />
               </TableCell>
               <TableCell>
                 <div className="flex justify-end gap-3">
-                  <Link
-                    href={`/owner/rooms/${r.id}/edit`}
-                    className="self-center text-xs font-medium text-primary"
-                  >
-                    Edit
-                  </Link>
-                  {r.status !== "inactive" && (
-                    <ActionButton
-                      action={deactivateRoom.bind(null, r.id)}
-                      variant="ghost"
-                      confirmation="Deactivate this room? Affected listings will return to draft for review."
+                  {!admin && (
+                    <Link
+                      href={`/owner/rooms/${r.id}/edit`}
+                      className="self-center text-xs font-medium text-primary"
                     >
-                      Deactivate
+                      Edit
+                    </Link>
+                  )}
+                  {r.status !== "archived" && (
+                    <ActionButton
+                      action={
+                        admin
+                          ? moderateRoom.bind(null, r.id, "archived")
+                          : archiveRoom.bind(null, r.id)
+                      }
+                      variant="ghost"
+                      confirmation="Archive this room? It will disappear from normal management and public discovery while historical data remains available."
+                    >
+                      Archive
                     </ActionButton>
                   )}
                 </div>
@@ -218,7 +318,7 @@ export function ListingTable({
                 <StatusBadge status={l.listing_status} />
                 {l.listing_status === "draft" && (
                   <p className="mt-1 text-xs text-muted-foreground">
-                    Not submitted for review
+                    Not published
                   </p>
                 )}
               </TableCell>
@@ -242,31 +342,29 @@ export function ListingTable({
   )
 }
 export function VerificationTable({
-  verifications,
-  listings,
+  houses,
   admin = false,
 }: {
-  verifications: Verification[]
-  listings: Listing[]
+  houses: House[]
   admin?: boolean
 }) {
-  if (!verifications.length)
+  if (!houses.length)
     return (
       <EmptyState
         title={
           admin
-            ? "No listings awaiting verification."
+            ? "No boarding houses awaiting verification."
             : "No verification submissions yet."
         }
         description={
           admin
-            ? "Owners must add a primary photo and submit their listing for review. Saved drafts appear in All listings."
-            : "Submit a listing to see its review progress and administrator remarks here."
+            ? "Owners must add property photos and submit their boarding house for review."
+            : "Submit a boarding house to see its review progress and administrator remarks here."
         }
         action={
           admin && (
-            <LinkButton href="/admin/listings" variant="outline">
-              View all listings
+            <LinkButton href="/admin/boarding-houses" variant="outline">
+              View boarding houses
             </LinkButton>
           )
         }
@@ -277,7 +375,7 @@ export function VerificationTable({
       <Table>
         <TableHeader>
           <TableRow>
-            <TableHead>Listing</TableHead>
+            <TableHead>Boarding house</TableHead>
             <TableHead>Submitted</TableHead>
             <TableHead>Status</TableHead>
             <TableHead>Remarks</TableHead>
@@ -287,31 +385,35 @@ export function VerificationTable({
           </TableRow>
         </TableHeader>
         <TableBody>
-          {verifications.map((v) => (
-            <TableRow key={v.id}>
+          {houses.map((house) => (
+            <TableRow key={house.id}>
               <TableCell className="max-w-xs font-medium whitespace-normal">
-                {listings.find((l) => l.id === v.listing_id)?.title ||
-                  "Listing"}
+                {house.name}
               </TableCell>
               <TableCell className="text-muted-foreground">
-                {date(v.date_submitted)}
+                {house.verification_submitted_at
+                  ? date(house.verification_submitted_at)
+                  : "Not submitted"}
               </TableCell>
               <TableCell>
-                <StatusBadge status={v.status} />
+                <StatusBadge status={house.verification_status} />
               </TableCell>
               <TableCell className="max-w-sm text-xs whitespace-normal text-muted-foreground">
-                {v.remarks || "—"}
+                {house.verification_remarks || "—"}
               </TableCell>
               <TableCell>
                 <Link
                   href={
                     admin
-                      ? `/admin/verifications/${v.listing_id}`
-                      : `/owner/listings/${v.listing_id}`
+                      ? `/admin/verifications/${house.id}`
+                      : `/owner/boarding-houses/${house.id}/edit`
                   }
                   className="text-xs font-medium text-primary"
                 >
-                  {admin && v.status === "pending" ? "Review" : "View"} →
+                  {admin && house.verification_status === "pending"
+                    ? "Review"
+                    : "View"}{" "}
+                  →
                 </Link>
               </TableCell>
             </TableRow>

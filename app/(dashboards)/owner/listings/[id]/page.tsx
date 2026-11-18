@@ -9,11 +9,7 @@ import {
   StatusBadge,
 } from "@/components/shared"
 import { ActionButton } from "@/components/action-button"
-import {
-  ListingDetail,
-  VerificationHistory,
-} from "@/components/listings/listing-detail"
-import { PhotoManager } from "@/components/listings/photo-manager"
+import { ListingDetail } from "@/components/listings/listing-detail"
 export default async function OwnerListingPage({
   params,
 }: {
@@ -24,10 +20,10 @@ export default async function OwnerListingPage({
   const editable = ["draft", "rejected"].includes(detail.listing.listing_status)
   const requirements = [
     {
-      label: "Active property with a city and province",
+      label: "Approved boarding house",
       complete:
         detail.house.status === "active" &&
-        Boolean(detail.house.city?.trim() && detail.house.province?.trim()),
+        detail.house.verification_status === "approved",
       href: `/owner/boarding-houses/${detail.house.id}/edit`,
       action: "Edit property",
     },
@@ -38,10 +34,10 @@ export default async function OwnerListingPage({
       action: "Manage rooms",
     },
     {
-      label: "A primary listing photo",
+      label: "A primary boarding house photo",
       complete: detail.photos.some((photo) => photo.is_primary),
-      href: "#listing-photos",
-      action: "Add a photo below",
+      href: `/owner/boarding-houses/${detail.house.id}/edit#property-photos`,
+      action: "Manage property photos",
     },
   ]
   return (
@@ -69,7 +65,7 @@ export default async function OwnerListingPage({
                 ? "Prepare your listing for resubmission"
                 : "Draft saved — not submitted yet"
             }
-            description="Complete these requirements, then submit your listing to the administrator's review queue."
+            description="The boarding house has already been verified. Complete these requirements, then publish the listing."
           >
             <ul
               className="mb-5 space-y-3 text-sm"
@@ -109,40 +105,15 @@ export default async function OwnerListingPage({
               disabled={
                 !requirements.every((requirement) => requirement.complete)
               }
-              confirmation="Submit this listing for administrator verification? Listing details and photos will be locked while it is being reviewed."
+              confirmation="Publish this listing for tenants to discover?"
             >
               <Send className="size-4" />
-              Submit for review
+              Publish listing
             </ActionButton>
           </Panel>
         </div>
       )}
-      {detail.listing.listing_status === "for_review" && (
-        <div
-          role="status"
-          className="mb-6 rounded-xl border border-primary/20 bg-primary/5 p-5 text-sm"
-        >
-          Submitted for administrator review. You can follow the decision in
-          Verification status.
-        </div>
-      )}
-      <div id="listing-photos" className="mb-6 scroll-mt-6">
-        <Panel
-          title="Listing photos"
-          description="Your primary photo is shown when tenants explore listings."
-        >
-          <PhotoManager
-            listingId={id}
-            photos={detail.photos}
-            editable={editable}
-          />
-        </Panel>
-      </div>
-      <ListingDetail detail={detail} showPhotos={false}>
-        <Panel title="Verification status">
-          <VerificationHistory verifications={detail.verifications} />
-        </Panel>
-      </ListingDetail>
+      <ListingDetail detail={detail} />
     </>
   )
 }

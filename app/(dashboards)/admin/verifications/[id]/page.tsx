@@ -1,34 +1,40 @@
-import { getListingDetail } from "@/lib/data"
+import { notFound } from "next/navigation"
+import { getAdminData } from "@/lib/data"
 import { DashboardHeader, Panel, StatusBadge } from "@/components/shared"
-import {
-  ListingDetail,
-  VerificationHistory,
-} from "@/components/listings/listing-detail"
+import { HouseCards } from "@/components/management-tables"
 import { ReviewForm } from "@/components/forms/review-form"
+
 export default async function ReviewPage({
   params,
 }: {
   params: Promise<{ id: string }>
 }) {
   const { id } = await params
-  const detail = await getListingDetail(id, "admin")
+  const { houses, rooms, photos, listings } = await getAdminData()
+  const house = houses.find((item) => item.id === id)
+  if (!house) notFound()
+
   return (
     <>
       <DashboardHeader
-        title={detail.listing.title}
-        description="Review the property, rooms, amenities, rules, and photos before making a decision."
-        action={<StatusBadge status={detail.listing.listing_status} />}
+        title={house.name}
+        description="Review the boarding house details and property photos before allowing room creation."
+        action={<StatusBadge status={house.verification_status} />}
       />
-      <ListingDetail detail={detail}>
-        {detail.listing.listing_status === "for_review" && (
-          <Panel title="Review this listing">
-            <ReviewForm listingId={id} />
+      <div className="space-y-6">
+        <HouseCards
+          houses={[house]}
+          rooms={rooms}
+          photos={photos}
+          listings={listings}
+          admin
+        />
+        {house.verification_status === "pending" && (
+          <Panel title="Review this boarding house">
+            <ReviewForm houseId={house.id} />
           </Panel>
         )}
-        <Panel title="Review history">
-          <VerificationHistory verifications={detail.verifications} />
-        </Panel>
-      </ListingDetail>
+      </div>
     </>
   )
 }

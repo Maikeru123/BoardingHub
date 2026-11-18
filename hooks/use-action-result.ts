@@ -13,18 +13,18 @@ export function useActionResult() {
       if (result.error) {
         setError(result.error)
         toast.error(result.error)
-        return false
+        return null
       }
       if (result.success) toast.success(result.success)
       if (result.redirectTo) router.push(result.redirectTo)
       // Server Actions revalidate their affected paths and return the fresh UI.
       // Refreshing here starts another request and can race the navigation above.
-      return true
+      return result
     } catch {
       const message = "Something went wrong. Please refresh and try again."
       setError(message)
       toast.error(message)
-      return false
+      return null
     }
   }
   return { run, error }

@@ -34,7 +34,7 @@ export default function HomePage() {
               houses, explore the details, and find a place that feels like you.
             </p>
             <form
-              action="/listings"
+              action="/boarding-houses"
               className="mt-9 flex max-w-lg items-center gap-3 rounded-xl border bg-card p-2 shadow-lg shadow-slate-200/30 dark:shadow-none"
             >
               <MapPin className="ml-3 size-5 shrink-0 text-primary" />
@@ -43,11 +43,14 @@ export default function HomePage() {
               </label>
               <input
                 id="home-search"
-                name="q"
+                name="search"
                 placeholder="Search a boarding house…"
                 className="h-12 w-full min-w-0 bg-transparent text-sm outline-none"
               />
-              <button aria-label="Find a place" className="flex h-12 shrink-0 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90">
+              <button
+                aria-label="Find a place"
+                className="flex h-12 shrink-0 items-center gap-2 rounded-lg bg-primary px-5 text-sm font-medium text-white hover:bg-primary/90"
+              >
                 <Search className="size-4" />
                 <span className="hidden sm:inline">Find a place</span>
               </button>
@@ -71,8 +74,8 @@ export default function HomePage() {
             <div className="absolute -top-5 -right-3 h-72 w-72 rounded-full bg-primary/5" />
             <div className="relative aspect-[1.05] overflow-hidden rounded-[28px]">
               <Image
-                src="/bh1.jpg"
-                alt="A bright two-storey boarding house with balconies and a blue roof"
+                src="/bh_homepage.jpg"
+                alt="Two residents relaxing together in a shared boarding room"
                 fill
                 priority
                 sizes="(max-width: 1024px) 90vw, 45vw"
@@ -97,7 +100,7 @@ export default function HomePage() {
                   Discover with confidence
                 </p>
                 <p className="mt-1 text-xs text-muted-foreground">
-                  Every published listing is reviewed
+                  Boarding houses are verified before rooms are added
                 </p>
               </div>
             </div>
@@ -206,7 +209,7 @@ export default function HomePage() {
             © {new Date().getFullYear()} BoardingHub. Find a place. Manage with
             ease.
           </p>
-          <Link href="/listings" className="text-sm text-primary">
+          <Link href="/boarding-houses" className="text-sm text-primary">
             Explore boarding houses →
           </Link>
         </div>

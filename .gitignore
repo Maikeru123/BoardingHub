@@ -21,6 +21,7 @@ dist/
 
 # misc
 .DS_Store
+~$*
 *.pem
 *.key
 *.p12
@@ -34,8 +35,9 @@ dist/
 .env*
 !/.env.example
 
-# Generated administrator login; never publish credentials
+# Generated seeded logins; never publish credentials
 /.admin-credentials.local*
+/.seed-credentials.local*
 
 # Supabase local state and browser test output
 supabase/.temp/

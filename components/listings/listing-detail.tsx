@@ -1,24 +1,28 @@
 import Image from "next/image"
 import {
   BedDouble,
-  MapPin,
+  Building2,
   Phone,
   ShieldCheck,
   Check,
   Users,
 } from "lucide-react"
 import { Panel, StatusBadge } from "@/components/shared"
-import { currency, address, label, date } from "@/lib/format"
-import type { ListingDetail as Detail, Verification } from "@/types/domain"
+import { currency, label, date } from "@/lib/format"
+import { LocationDisplay } from "@/components/boarding-house/location-display"
+import type {
+  ListingDetail as Detail,
+  ListingVerification,
+} from "@/types/domain"
 export function VerificationHistory({
-  verifications,
+  listingVerifications,
 }: {
-  verifications: Verification[]
+  listingVerifications: ListingVerification[]
 }) {
   return (
     <div className="space-y-5">
-      {verifications.length ? (
-        verifications.map((v) => (
+      {listingVerifications.length ? (
+        listingVerifications.map((v) => (
           <div key={v.id} className="border-l-2 border-primary/20 pl-4">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <StatusBadge status={v.status} />
@@ -40,7 +44,7 @@ export function VerificationHistory({
         ))
       ) : (
         <p className="text-sm text-muted-foreground">
-          This listing has not been submitted for review yet.
+          This listing has not been published yet.
         </p>
       )}
     </div>
@@ -58,31 +62,39 @@ export function ListingDetail({
   const { listing, house, rooms, amenities, photos } = detail
   return (
     <div className="space-y-6">
-      {showPhotos && photos.length > 0 && (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
-          {photos.map((photo, index) => (
-            <div
-              key={photo.id}
-              className={
-                index === 0
-                  ? "relative col-span-2 aspect-[16/9] overflow-hidden rounded-xl sm:col-span-3"
-                  : "relative aspect-[4/3] overflow-hidden rounded-lg bg-muted"
-              }
-            >
-              {photo.url && (
-                <Image
-                  src={photo.url}
-                  alt={`${listing.title} — photo ${index + 1}`}
-                  fill
-                  unoptimized
-                  sizes={index === 0 ? "80vw" : "30vw"}
-                  className="object-cover"
-                />
-              )}
+      {showPhotos &&
+        (photos.length > 0 ? (
+          <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+            {photos.map((photo, index) => (
+              <div
+                key={photo.id}
+                className={
+                  index === 0
+                    ? "relative col-span-2 aspect-[16/9] overflow-hidden rounded-xl sm:col-span-3"
+                    : "relative aspect-[4/3] overflow-hidden rounded-lg bg-muted"
+                }
+              >
+                {photo.url && (
+                  <Image
+                    src={photo.url}
+                    alt={`${listing.title} — photo ${index + 1}`}
+                    fill
+                    unoptimized
+                    sizes={index === 0 ? "80vw" : "30vw"}
+                    className="object-cover"
+                  />
+                )}
+              </div>
+            ))}
+          </div>
+        ) : (
+          <div className="flex aspect-[16/6] items-center justify-center rounded-xl border bg-muted text-muted-foreground">
+            <div className="text-center">
+              <Building2 className="mx-auto mb-2 size-10 opacity-40" />
+              <p className="text-sm">No property photo available</p>
             </div>
-          ))}
-        </div>
-      )}
+          </div>
+        ))}
       <div className="grid items-start gap-6 xl:grid-cols-[1fr_320px]">
         <div className="space-y-6">
           <Panel title="About this listing">
@@ -92,18 +104,10 @@ export function ListingDetail({
           </Panel>
           <Panel title={house.name} description="Boarding house information">
             <div className="space-y-4">
-              <p className="flex items-start gap-2 text-sm">
-                <MapPin className="mt-0.5 size-4 shrink-0 text-primary" />
-                {address(house) || "Address not provided"}
-              </p>
+              <LocationDisplay location={house} />
               <p className="text-sm leading-7 whitespace-pre-wrap text-muted-foreground">
                 {house.description || "No property description provided."}
               </p>
-              {house.latitude !== null && house.longitude !== null && (
-                <p className="text-xs text-muted-foreground">
-                  Coordinates: {house.latitude}, {house.longitude}
-                </p>
-              )}
             </div>
           </Panel>
           <Panel

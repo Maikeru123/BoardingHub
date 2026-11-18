@@ -90,15 +90,44 @@ export function EmptyState({
   )
 }
 export function StatusBadge({ status }: { status: string }) {
-  const green = ["active", "available", "published", "approved"].includes(
-    status
-  )
-  const red = ["suspended", "rejected"].includes(status)
+  const green = [
+    "active",
+    "available",
+    "published",
+    "approved",
+    "paid",
+    "completed",
+    "resolved",
+  ].includes(status)
+  const red = [
+    "suspended",
+    "rejected",
+    "cancelled",
+    "dismissed",
+    "overdue",
+    "payment_rejected",
+  ].includes(status)
   const yellow = [
     "pending",
     "for_review",
     "maintenance",
     "for_correction",
+    "complete_address",
+    "add_room",
+    "add_photos",
+    "create_listing",
+    "needs_verification",
+    "awaiting_approval",
+    "needs_correction",
+    "reserved",
+    "ending",
+    "under_review",
+    "pending_review",
+    "due_soon",
+    "due",
+    "future_reserved",
+    "waiting_for_payment",
+    "payment_required",
   ].includes(status)
   return (
     <Badge
@@ -115,7 +144,17 @@ export function StatusBadge({ status }: { status: string }) {
       )}
     >
       <span className="size-1.5 rounded-full bg-current" />
-      {label(status)}
+      {status === "pending_review"
+        ? "Pending Review"
+        : status === "payment_rejected"
+          ? "Payment Rejected"
+          : status === "future_reserved"
+            ? "Future Reservation"
+            : status === "waiting_for_payment"
+              ? "Waiting for Payment"
+              : status === "payment_required"
+                ? "Payment Required"
+                : label(status)}
     </Badge>
   )
 }

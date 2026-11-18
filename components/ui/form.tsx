@@ -30,6 +30,7 @@ export function FormField<T extends FieldValues>({
   autoComplete,
   required,
   step,
+  inputMode,
 }: {
   control: Control<T>
   name: Path<T>
@@ -42,6 +43,7 @@ export function FormField<T extends FieldValues>({
   autoComplete?: string
   required?: boolean
   step?: string
+  inputMode?: React.HTMLAttributes<HTMLInputElement>["inputMode"]
 }) {
   const id = useId()
   return (
@@ -52,7 +54,13 @@ export function FormField<T extends FieldValues>({
         const shared = {
           id,
           "aria-invalid": fieldState.invalid,
-          "aria-describedby": [description && `${id}-description`, fieldState.error && `${id}-error`].filter(Boolean).join(' ') || undefined,
+          "aria-describedby":
+            [
+              description && `${id}-description`,
+              fieldState.error && `${id}-error`,
+            ]
+              .filter(Boolean)
+              .join(" ") || undefined,
           disabled,
           required,
         }
@@ -87,6 +95,7 @@ export function FormField<T extends FieldValues>({
                 {...shared}
                 type={type}
                 step={step}
+                inputMode={inputMode}
                 autoComplete={autoComplete}
                 placeholder={placeholder}
                 className="h-11"

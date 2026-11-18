@@ -11,8 +11,8 @@ export default function AuthLayout({
     <div className="grid min-h-screen lg:grid-cols-2">
       <aside className="relative hidden overflow-hidden bg-slate-950 lg:block">
         <Image
-          src="/bh1.jpg"
-          alt="Boarding house with a welcoming outdoor walkway"
+          src="/bh_homepage.jpg"
+          alt="Two residents relaxing together in a shared boarding room"
           fill
           priority
           sizes="50vw"

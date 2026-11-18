@@ -126,3 +126,20 @@ Paths are relative to the repository root. The four pre-existing untracked files
 - `types/database.ts`
 - `types/domain.ts`
 - `types/supabase.ts`
+
+## 2026-09-29 revision
+
+The historical inventory above describes the original Phase 1 implementation. This revision removed `components/listings/photo-manager.tsx` and added:
+
+- `app/api/locations/route.ts`
+- `components/boarding-house/location-display.tsx`
+- `components/boarding-house/photo-manager.tsx`
+- `components/boarding-house/philippine-address-selector.tsx`
+- `components/ui/combobox.tsx`
+- `lib/locations/philippines.ts`
+- `lib/photo-storage.ts`
+- `scripts/node-os-userinfo-fallback.mjs`
+- `supabase/migrations/202609290001_house_photos_and_psgc_locations.sql`
+- `tests/photo-migration.test.mjs`
+
+The revision modified the property/listing actions and forms, owner/admin/public data views, shared management UI, formatting/validation/types, migration and workflow tests, `package.json`, the README, and this report. `package-lock.json` was already modified in the working tree before the revision; its unrelated changes were preserved while adding the local PSGC dependency entry.

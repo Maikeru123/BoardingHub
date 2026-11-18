@@ -3,7 +3,7 @@ import { useState } from "react"
 import { z } from "zod"
 import { useForm } from "react-hook-form"
 import { zodResolver } from "@hookform/resolvers/zod"
-import { reviewListing } from "@/actions/listings"
+import { reviewBoardingHouse } from "@/actions/properties"
 import { reviewSchema } from "@/lib/validation"
 import { Form, FormField } from "@/components/ui/form"
 import { Button } from "@/components/ui/button"
@@ -19,7 +19,7 @@ import {
   AlertDialogAction,
 } from "@/components/ui/alert-dialog"
 import { useActionResult } from "@/hooks/use-action-result"
-export function ReviewForm({ listingId }: { listingId: string }) {
+export function ReviewForm({ houseId }: { houseId: string }) {
   const [open, setOpen] = useState(false)
   const form = useForm<z.infer<typeof reviewSchema>>({
     resolver: zodResolver(reviewSchema),
@@ -27,7 +27,7 @@ export function ReviewForm({ listingId }: { listingId: string }) {
   })
   const { run, error } = useActionResult()
   const save = form.handleSubmit(async (values) => {
-    if (await run(() => reviewListing(listingId, values))) setOpen(false)
+    if (await run(() => reviewBoardingHouse(houseId, values))) setOpen(false)
   })
   return (
     <Form {...form}>
@@ -40,9 +40,9 @@ export function ReviewForm({ listingId }: { listingId: string }) {
           name="decision"
           label="Review decision"
           options={[
-            { value: "approved", label: "Approve & publish" },
+            { value: "approved", label: "Approve boarding house" },
             { value: "for_correction", label: "Request correction" },
-            { value: "rejected", label: "Reject listing" },
+            { value: "rejected", label: "Reject boarding house" },
           ]}
         />
         <FormField
@@ -50,7 +50,7 @@ export function ReviewForm({ listingId }: { listingId: string }) {
           name="remarks"
           label="Remarks"
           type="textarea"
-          description="Required when rejecting a listing or requesting correction."
+          description="Required when rejecting a boarding house or requesting correction."
         />
         {error && (
           <Alert variant="destructive">
@@ -66,8 +66,8 @@ export function ReviewForm({ listingId }: { listingId: string }) {
           <AlertDialogHeader>
             <AlertDialogTitle>Confirm review decision</AlertDialogTitle>
             <AlertDialogDescription>
-              Approval publishes this listing immediately. A rejection or
-              correction returns your remarks to the owner.
+              Approval allows the owner to add rooms. A rejection or correction
+              returns your remarks to the owner.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>

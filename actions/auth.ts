@@ -23,7 +23,18 @@ const configurationError = {
   error:
     "Account services are not connected yet. Please try again once setup is complete.",
 }
-export async function login(values: unknown): Promise<ActionResult> {
+function safeNext(next?: string) {
+  return next &&
+    next.startsWith("/") &&
+    !next.startsWith("//") &&
+    next.length <= 500
+    ? next
+    : "/dashboard"
+}
+export async function login(
+  values: unknown,
+  next?: string
+): Promise<ActionResult> {
   const parsed = loginSchema.safeParse(values)
   if (!parsed.success) return { error: parsed.error.issues[0].message }
   if (!isSupabaseConfigured()) return configurationError
@@ -37,7 +48,7 @@ export async function login(values: unknown): Promise<ActionResult> {
           : "Unable to sign in. Check your email and password and try again.",
     }
   revalidatePath("/", "layout")
-  return { redirectTo: "/dashboard" }
+  return { redirectTo: safeNext(next) }
 }
 export async function register(values: unknown): Promise<ActionResult> {
   const parsed = registerSchema.safeParse(values)

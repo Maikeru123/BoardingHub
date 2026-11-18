@@ -7,9 +7,15 @@ import {
   FileText,
   Plus,
   Sparkles,
+  MessageSquare,
+  MailOpen,
+  KeyRound,
+  CreditCard,
 } from "lucide-react"
 import { requireRole } from "@/lib/auth"
 import { getOwnerData } from "@/lib/data"
+import { getInquiryStats, getInquirySummaries } from "@/lib/data/inquiries"
+import { getPayments, getRentalRecords } from "@/lib/data/rentals"
 import {
   DashboardHeader,
   LinkButton,
@@ -17,9 +23,31 @@ import {
   Panel,
 } from "@/components/shared"
 import { ListingTable } from "@/components/management-tables"
+import { InquiryList } from "@/components/inquiries/inquiry-list"
 export default async function OwnerPage() {
   const { profile } = await requireRole("owner")
-  const { houses, rooms, listings, verifications } = await getOwnerData()
+  const [
+    { houses, rooms, listings },
+    inquiryStats,
+    inquiryList,
+    rentalRecords,
+    paymentData,
+  ] = await Promise.all([
+    getOwnerData(),
+    getInquiryStats("owner"),
+    getInquirySummaries("owner"),
+    getRentalRecords("owner"),
+    getPayments("owner"),
+  ])
+  const activeHouses = houses.filter((house) => house.status === "active")
+  const activeHouseIds = new Set(activeHouses.map((house) => house.id))
+  const activeRooms = rooms.filter(
+    (room) =>
+      room.status !== "archived" && activeHouseIds.has(room.boarding_house_id)
+  )
+  const activeListings = listings.filter((listing) =>
+    activeHouseIds.has(listing.boarding_house_id)
+  )
   return (
     <>
       <DashboardHeader
@@ -35,33 +63,100 @@ export default async function OwnerPage() {
       <div className="mb-8 grid gap-5 sm:grid-cols-2 xl:grid-cols-4">
         <StatCard
           title="My boarding houses"
-          value={houses.length}
+          value={activeHouses.length}
           icon={Building2}
           caption={`${houses.filter((h) => h.status === "active").length} active properties`}
           href="/owner/boarding-houses"
         />
         <StatCard
           title="Rooms"
-          value={rooms.length}
+          value={activeRooms.length}
           icon={BedDouble}
-          caption={`${rooms.filter((r) => r.status === "available").length} marked available`}
+          caption={`${activeRooms.filter((r) => r.status === "available").length} marked available`}
           href="/owner/rooms"
         />
         <StatCard
-          title="Listings"
-          value={listings.length}
+          title="Available rooms"
+          value={
+            activeRooms.filter((room) => room.status === "available").length
+          }
+          icon={BedDouble}
+          caption="General room status"
+          href="/owner/rooms"
+        />
+        <StatCard
+          title="Published listings"
+          value={
+            activeListings.filter(
+              (listing) => listing.listing_status === "published"
+            )
+              .length
+          }
           icon={FileText}
-          caption={`${listings.filter((l) => l.listing_status === "published").length} published listings`}
+          caption={`${activeListings.length} total listings`}
           href="/owner/listings"
         />
         <StatCard
+          title="Open inquiries"
+          value={inquiryStats.open}
+          icon={MessageSquare}
+          caption="Active tenant conversations"
+          href="/owner/inquiries"
+        />
+        <StatCard
+          title="Pending rental requests"
+          value={
+            rentalRecords.filter((item) => item.request.status === "pending")
+              .length
+          }
+          icon={KeyRound}
+          caption={`${rentalRecords.filter((item) => item.transaction?.status === "active").length} active rentals`}
+          href="/owner/rental-requests"
+        />
+        <StatCard
+          title="Payments to review"
+          value={
+            paymentData.payments.filter(
+              (item) => item.payment_status === "pending"
+            ).length
+          }
+          icon={CreditCard}
+          caption="Tenant submissions awaiting confirmation"
+          href="/owner/payments"
+        />
+        <StatCard
+          title="Unread messages"
+          value={inquiryStats.unread}
+          icon={MailOpen}
+          caption="Waiting for your reply"
+          href="/owner/inquiries"
+        />
+        <StatCard
           title="Pending verification"
-          value={verifications.filter((v) => v.status === "pending").length}
+          value={
+            activeHouses.filter(
+              (house) => house.verification_status === "pending"
+            ).length
+          }
           icon={ClipboardCheck}
           caption="Awaiting administrator review"
           href="/owner/verifications"
         />
       </div>
+      {inquiryList.summaries.length > 0 && (
+        <section className="mb-8">
+          <div className="mb-5 flex items-center justify-between">
+            <h2 className="font-semibold">Recent inquiries</h2>
+            <Link
+              href="/owner/inquiries"
+              className="text-xs font-medium text-primary"
+            >
+              View all inquiries →
+            </Link>
+          </div>
+          <InquiryList items={inquiryList.summaries.slice(0, 3)} role="owner" />
+        </section>
+      )}
       <div className="mb-8 flex flex-col justify-between gap-6 overflow-hidden rounded-xl border border-primary/10 bg-primary/5 p-6 sm:flex-row sm:items-center">
         <div className="flex gap-4">
           <span className="flex size-12 shrink-0 items-center justify-center rounded-xl bg-card text-primary">
@@ -72,18 +167,22 @@ export default async function OwnerPage() {
               Great spaces deserve to be discovered.
             </h2>
             <p className="mt-2 max-w-xl text-xs leading-6 text-muted-foreground">
-              Add your property details, set up rooms, and create a listing.
-              We’ll guide you from your first draft to publication.
+              Add property details and photos, verify the boarding house, then
+              set up rooms and publish a listing.
             </p>
           </div>
         </div>
         <LinkButton
           href={
-            houses.length ? "/owner/listings/new" : "/owner/boarding-houses/new"
+            activeHouses.some(
+              (house) => house.verification_status === "approved"
+            )
+              ? "/owner/rooms/new"
+              : "/owner/boarding-houses"
           }
           variant="outline"
         >
-          {houses.length ? "Create a listing" : "Get started"}
+          {houses.length ? "Continue setup" : "Get started"}
           <ArrowRight className="size-4" />
         </LinkButton>
       </div>
@@ -98,7 +197,10 @@ export default async function OwnerPage() {
               View all listings →
             </Link>
           </div>
-          <ListingTable listings={listings.slice(0, 5)} houses={houses} />
+          <ListingTable
+            listings={activeListings.slice(0, 5)}
+            houses={activeHouses}
+          />
         </section>
         <Panel
           title="Your path to publication"
@@ -113,22 +215,26 @@ export default async function OwnerPage() {
                 done: houses.length > 0,
               },
               {
+                title: "Verify the boarding house",
+                text: "Submit property details and photos for review.",
+                href: "/owner/verifications",
+                done: activeHouses.some(
+                  (house) => house.verification_status === "approved"
+                ),
+              },
+              {
                 title: "Set up your rooms",
                 text: "Room types, prices, and capacity.",
                 href: "/owner/rooms",
-                done: rooms.length > 0,
+                done: activeRooms.length > 0,
               },
               {
-                title: "Create your listing",
-                text: "A clear title and great photos.",
+                title: "Publish a listing",
+                text: "Introduce the approved property to tenants.",
                 href: "/owner/listings",
-                done: listings.length > 0,
-              },
-              {
-                title: "Submit for review",
-                text: "Our administrators take it from here.",
-                href: "/owner/verifications",
-                done: verifications.length > 0,
+                done: activeListings.some(
+                  (listing) => listing.listing_status === "published"
+                ),
               },
             ].map((step, i) => (
               <li key={step.title} className="flex gap-3">

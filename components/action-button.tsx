@@ -38,6 +38,7 @@ export function ActionButton({
   if (!confirmation)
     return (
       <Button
+        type="button"
         variant={variant}
         disabled={pending || disabled}
         onClick={execute}
@@ -49,7 +50,13 @@ export function ActionButton({
   return (
     <AlertDialog open={open} onOpenChange={setOpen}>
       <AlertDialogTrigger
-        render={<Button variant={variant} disabled={pending || disabled} />}
+        render={
+          <Button
+            type="button"
+            variant={variant}
+            disabled={pending || disabled}
+          />
+        }
       >
         {children}
       </AlertDialogTrigger>

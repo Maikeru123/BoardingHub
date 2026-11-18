@@ -8,12 +8,12 @@ export default async function AdminVerificationsPage({
   searchParams: Promise<{ view?: string }>
 }) {
   const { view } = await searchParams
-  const { listings, verifications } = await getAdminData()
+  const { houses } = await getAdminData()
   return (
     <>
       <DashboardHeader
-        title="Listing verification"
-        description="Inspect submitted properties and help owners publish complete, accurate listings."
+        title="Boarding house verification"
+        description="Review property details and photos before owners can add rooms."
       />
       <nav
         aria-label="Verification filter"
@@ -42,12 +42,11 @@ export default async function AdminVerificationsPage({
       </nav>
       <VerificationTable
         admin
-        verifications={
+        houses={
           view === "all"
-            ? verifications
-            : verifications.filter((v) => v.status === "pending")
+            ? houses
+            : houses.filter((house) => house.verification_status === "pending")
         }
-        listings={listings}
       />
     </>
   )

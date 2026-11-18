@@ -2,7 +2,11 @@ import { getOwnerData } from "@/lib/data"
 import { DashboardHeader, EmptyState, LinkButton } from "@/components/shared"
 import { ListingForm } from "@/components/forms/listing-form"
 export default async function NewListingPage() {
-  const { houses } = await getOwnerData()
+  const { houses: allHouses } = await getOwnerData()
+  const houses = allHouses.filter(
+    (house) =>
+      house.status === "active" && house.verification_status === "approved"
+  )
   return (
     <>
       <DashboardHeader
@@ -13,11 +17,11 @@ export default async function NewListingPage() {
         <ListingForm houses={houses} />
       ) : (
         <EmptyState
-          title="Add a boarding house first."
-          description="Choose a property for your listing after creating your first boarding house."
+          title="Verify a boarding house first."
+          description="Listings can be created after the boarding house is approved and its rooms are ready."
           action={
-            <LinkButton href="/owner/boarding-houses/new">
-              Add boarding house
+            <LinkButton href="/owner/boarding-houses">
+              View boarding houses
             </LinkButton>
           }
         />

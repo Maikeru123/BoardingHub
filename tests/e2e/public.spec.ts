@@ -31,8 +31,8 @@ test("home page, navigation, search, and responsive layout", async ({
       else
         await page.getByLabel("Search boarding house listings").press("Enter")
     })
-  await expect(page).toHaveURL(/\/listings\?q=Blue\+House/)
-  await expect(page.getByLabel("Search listings by title")).toHaveValue(
+  await expect(page).toHaveURL(/\/boarding-houses\?search=Blue\+House/)
+  await expect(page.getByLabel("Search boarding houses")).toHaveValue(
     "Blue House"
   )
   expect(errors).toEqual([])
@@ -64,7 +64,9 @@ test("protected entrypoints redirect anonymous users before displaying protected
   for (const path of [
     "/tenant",
     "/tenant/listings",
+    "/tenant/inquiries",
     "/owner",
+    "/owner/inquiries",
     "/owner/boarding-houses/new",
     "/owner/rooms/new",
     "/owner/listings/new",
@@ -94,7 +96,7 @@ test("password recovery and invalid callback states", async ({ page }) => {
   await expect(
     page.getByText(/email link is invalid or has expired/)
   ).toBeVisible()
-  await page.goto("/listings/not-a-uuid")
+  await page.goto("/boarding-houses/not-a-uuid")
   await expect(
     page.getByRole("heading", { name: "This place isn’t on the map." })
   ).toBeVisible()

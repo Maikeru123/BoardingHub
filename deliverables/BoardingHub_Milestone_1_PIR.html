@@ -1,0 +1,434 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="author" content="Michael Aguido L. Velez">
+  <meta name="description" content="BoardingHub Milestone 1 Preliminary Investigation Report and System Specification">
+  <title>BoardingHub — Milestone 1 PIR</title>
+  <style>
+    @page { size: A4; margin: 2.54cm; }
+    body { font-family: "Times New Roman", serif; font-size: 12pt; line-height: 1.35; color: #172033; margin: 0; }
+    h1 { color: #06376b; font-size: 19pt; margin: 22pt 0 8pt; border-bottom: 1.5pt solid #1493ff; padding-bottom: 4pt; page-break-after: avoid; }
+    h2 { color: #0b5ca8; font-size: 15pt; margin: 17pt 0 6pt; page-break-after: avoid; }
+    h3 { color: #123d69; font-size: 12.5pt; margin: 13pt 0 4pt; page-break-after: avoid; }
+    p { margin: 0 0 8pt; text-align: justify; }
+    ul, ol { margin-top: 3pt; margin-bottom: 9pt; }
+    li { margin-bottom: 3pt; }
+    table { width: 100%; border-collapse: collapse; margin: 8pt 0 14pt; font-size: 10.5pt; page-break-inside: avoid; }
+    th { background: #0b5ca8; color: white; font-weight: bold; text-align: left; padding: 6pt; border: 1pt solid #7895b4; }
+    td { vertical-align: top; padding: 5pt 6pt; border: 1pt solid #aebdca; }
+    tr:nth-child(even) td { background: #f3f8fd; }
+    .cover { text-align: center; page-break-after: always; padding-top: 32pt; }
+    .cover img { width: 245pt; height: auto; margin: 8pt auto 22pt; }
+    .cover .course { font-size: 15pt; letter-spacing: .5pt; color: #36546f; margin-bottom: 24pt; }
+    .cover .milestone { font-size: 20pt; font-weight: bold; color: #06376b; margin: 6pt 0 14pt; }
+    .cover .title { font-size: 22pt; font-weight: bold; color: #0a79d5; line-height: 1.22; margin: 12pt auto 36pt; max-width: 440pt; }
+    .cover .meta { text-align: center; font-size: 13pt; margin-top: 14pt; }
+    .notice { background: #edf7ff; border-left: 4pt solid #1493ff; padding: 9pt 11pt; margin: 10pt 0 14pt; }
+    .contents { page-break-after: always; }
+    .contents ol { line-height: 1.5; }
+    .org { border: 0; text-align: center; }
+    .org td { border: 0; background: white !important; text-align: center; padding: 5pt; }
+    .org .box { border: 1.2pt solid #0b5ca8; background: #edf7ff !important; font-weight: bold; }
+    .org .line { color: #0b5ca8; font-size: 18pt; padding: 0; }
+    .label { font-weight: bold; color: #06376b; }
+    .formula { font-family: Consolas, monospace; font-size: 10pt; background: #f5f7fa; border: 1pt solid #d5dde5; padding: 7pt; margin: 5pt 0 9pt; }
+    .small { font-size: 9.5pt; }
+    .page-break { page-break-before: always; }
+    .keep { page-break-inside: avoid; }
+    .center { text-align: center; }
+    .right { text-align: right; }
+    a { color: #075f9f; text-decoration: underline; }
+  </style>
+</head>
+<body>
+
+  <section class="cover">
+    <img src="C:/Users/Miko/Desktop/nextjscode/boardinghub/public/BoardingHub.png" alt="BoardingHub logo">
+    <div class="course">MSIT 1101 — Software Engineering</div>
+    <div class="milestone">Milestone 1</div>
+    <div>Preliminary Investigation Report / System Specification</div>
+    <div class="title">BoardingHub: A Web-Based Boarding House Discovery and Rental Management System</div>
+    <div class="meta"><strong>Prepared by:</strong><br>Michael Aguido L. Velez</div>
+    <div class="meta"><strong>Date:</strong><br>October 1, 2026</div>
+  </section>
+
+  <section class="contents">
+    <h1>Contents</h1>
+    <ol>
+      <li>Organization Name</li>
+      <li>Industry Type</li>
+      <li>Organization Address</li>
+      <li>Organizational Chart / Structure</li>
+      <li>Organization’s Brief History</li>
+      <li>Other Company Profile</li>
+      <li>Business Process</li>
+      <li>Identified Problems</li>
+      <li>System Scope and Requirements</li>
+      <li>Database Schema and Data Design</li>
+      <li>Tangible and Intangible Benefits</li>
+      <li>System Alternatives</li>
+      <li>Recommended System</li>
+      <li>Conclusion</li>
+      <li>References</li>
+      <li>Appendix A — Database Data Dictionary</li>
+      <li>Appendix B — Problem-to-Feature Traceability</li>
+    </ol>
+    <div class="notice">
+      <strong>Basis and limitation of this report.</strong> Sections describing system behavior and data design are based on the BoardingHub repository and its Supabase migrations as of October 1, 2026. Monetary benefits, workload volumes, exchange rates, and labor rates are planning assumptions—not measured operating results. They are separated from implemented facts so they can be replaced with actual data after deployment.
+    </div>
+  </section>
+
+  <h1>1. Organization Name</h1>
+  <p><strong>BoardingHub</strong></p>
+  <p>BoardingHub is a proposed online housing-service venture and an implemented web application that centralizes boarding-house discovery, verified property information, room availability, tenant–owner communication, rental requests, payment records, reviews, reports, and administrative moderation. Its operating idea is summarized by the project’s tagline: <em>“Find a Place. Manage with Ease.”</em></p>
+
+  <h1>2. Industry Type</h1>
+  <p><strong>Property Rental / Real Estate Technology / Online Housing Services</strong></p>
+  <p>The organization operates in the rental-housing sector, concentrating on affordable boarding houses, rooms, shared accommodation, bed spaces, and studio units. Unlike a general real-estate marketplace focused on property sales, BoardingHub supports the complete boarding-house journey: discovering a property, checking rooms, contacting an owner, requesting a rental period, recording payments, and reviewing a completed stay.</p>
+
+  <h1>3. Organization Address</h1>
+  <p><strong>Davao City, Philippines</strong></p>
+  <p>Davao City is the proposed initial operating base and pilot market because of its concentration of universities, colleges, workplaces, and people seeking short- or medium-term accommodation. The application is not technically limited to Davao City: its address selector stores official ten-digit Philippine Standard Geographic Code (PSGC) values for province, city/municipality, and barangay, allowing future expansion throughout the Philippines.</p>
+
+  <h1>4. Organizational Chart / Structure</h1>
+  <table class="org">
+    <tr><td colspan="4" class="box">Founder / General Manager</td></tr>
+    <tr><td colspan="4" class="line">│</td></tr>
+    <tr>
+      <td class="box">Platform Administrator<br>&amp; Verification</td>
+      <td class="box">Owner/Tenant Support</td>
+      <td class="box">Marketing &amp;<br>Partnerships</td>
+      <td class="box">Web Development &amp;<br>Technical Operations</td>
+    </tr>
+  </table>
+  <p>BoardingHub is designed as a small startup structure in which one person may initially perform more than one function. The <strong>Founder / General Manager</strong> sets direction, approves policies, and manages partnerships. The <strong>Platform Administrator and Verification</strong> function reviews boarding houses, manages user status, moderates rooms, listings, reports, feedback, reviews, rentals, and payments. <strong>Owner/Tenant Support</strong> handles questions and guides users through onboarding and rental workflows. <strong>Marketing and Partnerships</strong> recruits property owners and builds relationships with schools and local communities. <strong>Technical Operations</strong> maintains the application, database migrations, security rules, deployments, backups, and defect resolution.</p>
+  <p>The system itself uses three application roles: <strong>tenant</strong>, <strong>owner</strong>, and <strong>administrator</strong>. These application roles control permitted pages, actions, and database records; they do not require every organizational function above to be a separate employee.</p>
+
+  <h1>5. Organization’s Brief History</h1>
+  <p>BoardingHub began as a response to a common problem experienced by students and employees who relocate: boarding-house information is distributed across social-media groups, Marketplace posts, printed advertisements, and personal recommendations. These sources often omit the exact address, current price, room type, amenities, rules, photographs, and actual availability.</p>
+  <p>The original proposal focused on a searchable listing website for Davao City. The project has since developed into a working, full-stack web application. The current repository includes authenticated role-based dashboards, property and room management, structured Philippine addresses, verification, public search and filters, tenant–owner inquiry threads, rental requests with date-conflict checking, payment records with proof images, completed-rental reviews, listing reports, user feedback, and administrative oversight.</p>
+  <p>This evolution changes the system from a simple advertising directory into a controlled rental-management platform. The current design preserves the organization’s original goal—making boarding-house information easier to find—while adding safeguards and workflows required to keep listings and transactions useful over time.</p>
+
+  <h1>6. Other Company Profile</h1>
+  <h2>6.1 Products and Services</h2>
+  <ul>
+    <li>Verified boarding-house profiles with structured Philippine addresses</li>
+    <li>Property and room photographs with one designated primary image</li>
+    <li>Room records for single, shared, bed-space, and studio accommodations</li>
+    <li>Search by keyword and location, plus price, capacity, type, amenity, and availability filters</li>
+    <li>Listing publication and lifecycle management</li>
+    <li>Private tenant–owner inquiries with read status</li>
+    <li>Date-based rental requests and conflict prevention</li>
+    <li>Rental transaction and move-out lifecycle management</li>
+    <li>Payment recording, proof-image submission, billing periods, and owner review</li>
+    <li>Verified-stay reviews, listing reports, feedback, and administrative moderation</li>
+  </ul>
+
+  <h2>6.2 Customers and Users</h2>
+  <ul>
+    <li>College and university students seeking accommodation</li>
+    <li>Employees and individuals relocating near workplaces</li>
+    <li>Boarding-house owners and property managers</li>
+    <li>Platform administrators responsible for verification and moderation</li>
+  </ul>
+
+  <h2>6.3 Other Stakeholders</h2>
+  <ul>
+    <li>Schools, universities, training centers, and employers</li>
+    <li>Local communities and barangay stakeholders</li>
+    <li>Supabase as the hosted authentication, PostgreSQL database, and object-storage platform</li>
+    <li>Web-hosting and domain providers</li>
+    <li>Developers, support personnel, and future business partners</li>
+  </ul>
+
+  <h1>7. Business Process</h1>
+  <p>The processes below use the template’s object-and-action method. Objects identify people, records, or documents; actions identify what participants and the system do.</p>
+
+  <h2>7.1 Account Registration and Profile Management</h2>
+  <p>A new user registers as either a tenant or property owner. The authentication service validates the credentials and creates the account. A database trigger creates the matching profile using only the tenant or owner role; public registration cannot assign administrator privileges. The user confirms the email, signs in, and may update personal and contact information. Administrators can suspend an account when necessary.</p>
+  <p><span class="label">Objects:</span> User, authentication account, profile, role, account status.</p>
+  <p><span class="label">Actions:</span> Register, validate, confirm, authenticate, create profile, update, suspend, sign out, reset password.</p>
+
+  <h2>7.2 Boarding-House Setup and Verification</h2>
+  <p>An owner creates a boarding-house record and enters its name, description, contact number, rules, payment terms, amenities, and PSGC-based address. The owner uploads property photos and selects one primary image. Before submission, the system requires a complete structured address and a primary photo. An administrator reviews the submitted property and either approves it, rejects it, or returns it for correction with remarks. Rooms cannot be created until the boarding house is approved. Changes to reviewed property details, amenities, or property photos invalidate the review and withdraw affected public content for another review.</p>
+  <p><span class="label">Objects:</span> Owner, boarding house, address, amenity, photo, verification status, administrator, remarks.</p>
+  <p><span class="label">Actions:</span> Create, enter, select, upload, designate primary, submit, review, approve, reject, request correction, revise, resubmit.</p>
+
+  <h2>7.3 Room and Listing Publication</h2>
+  <p>After the boarding house is approved, the owner creates rooms, specifying room number, type, capacity, monthly rent, description, and operational status. A single room is automatically limited to a capacity of one. The owner may add room photos and choose a primary room image. The owner then creates a listing title and description. The listing can be published only when the property is active and approved, at least one room is available, and a primary property photo exists. Administrators may later moderate a room or suspend a listing. Owners may archive and restore properties or rooms; pending requests are cancelled when their subject is archived, while accepted transaction history is preserved.</p>
+  <p><span class="label">Objects:</span> Approved boarding house, room, room photo, listing, owner, administrator, status.</p>
+  <p><span class="label">Actions:</span> Add, edit, price, classify, upload, publish, moderate, archive, restore, preserve history.</p>
+
+  <h2>7.4 Public Discovery and Comparison</h2>
+  <p>A visitor opens the public discovery page, enters keywords or location criteria, and applies filters such as price range, room type, minimum capacity, amenities, and available-only status. The database returns matching active, approved, and published properties. Occupied rooms are excluded from public availability. The user opens a property or room detail page to review photographs, address, amenities, house rules, rent, capacity, payment terms, current room state, owner name, and published reviews.</p>
+  <p><span class="label">Objects:</span> Visitor, search criteria, filter, boarding house, room, listing, photograph, review.</p>
+  <p><span class="label">Actions:</span> Search, filter, retrieve, sort, compare, display, inspect, select.</p>
+
+  <h2>7.5 Tenant–Owner Inquiry</h2>
+  <p>An authenticated tenant sends a first message from a published listing. The system creates one open inquiry thread for that tenant and listing, records the message, and updates the conversation’s last-message time. The tenant and the owner of the related property can read and reply; unrelated users cannot access the thread. Messages record sender, timestamp, and read time. Either participant can close the inquiry when it is no longer needed.</p>
+  <p><span class="label">Objects:</span> Tenant, owner, listing, inquiry thread, message, read status.</p>
+  <p><span class="label">Actions:</span> Start, send, record, receive, read, mark read, reply, close.</p>
+
+  <h2>7.6 Rental Request and Owner Decision</h2>
+  <p>A tenant selects an available room, a move-in date, and either a fixed-term or open-ended rental. Fixed-term requests require a move-out date after the move-in date; open-ended requests do not use an expected end date. The database checks that the room is public and available and that the requested period does not overlap a reserved or active rental. Transaction-level locking prevents two approvals from creating conflicting bookings. The owner reviews the request and approves or rejects it. Approval creates a rental transaction that snapshots the rent and payment terms, then rejects other pending requests that overlap the accepted period.</p>
+  <p><span class="label">Objects:</span> Tenant, room, rental request, rental period, owner, transaction, payment terms.</p>
+  <p><span class="label">Actions:</span> Select, request, validate, check availability, lock, approve, reject, create transaction, snapshot, resolve conflicts.</p>
+
+  <h2>7.7 Payment Recording and Review</h2>
+  <p>The tenant records an initial, monthly, advance, or other payment against a rental transaction. The record includes amount, method, reference number, optional proof image, and—when monthly—the billing period. Database rules prevent duplicate live initial payments and duplicate live monthly payments for the same billing period. The owner reviews the submission and marks it paid or rejected with remarks. This feature records and verifies payment evidence; it does not itself transfer money through a payment gateway.</p>
+  <p><span class="label">Objects:</span> Rental transaction, tenant, owner, payment, billing period, reference number, proof image, status.</p>
+  <p><span class="label">Actions:</span> Submit, upload, validate, review, accept, reject, annotate, retain.</p>
+
+  <h2>7.8 Rental Completion and Property Review</h2>
+  <p>The owner manages the rental through reserved, active, ending, completed, or cancelled states. The owner may set a future expected move-out date or record an actual move-out date. After a rental is completed, the tenant may submit one rating from one to five and an optional comment. The unique transaction relationship prevents multiple reviews for the same stay.</p>
+  <p><span class="label">Objects:</span> Rental transaction, status, move-out date, tenant, review, rating, comment.</p>
+  <p><span class="label">Actions:</span> Activate, schedule ending, complete, cancel, rate, comment, publish, moderate.</p>
+
+  <h2>7.9 Reporting, Feedback, and Administration</h2>
+  <p>A signed-in user may report a published listing for inaccurate, misleading, duplicate, unsafe, or outdated information and may submit general feedback. An administrator moves reports and feedback through pending, under-review, resolved, or dismissed states. The administrator may suspend a reported listing, hide an inappropriate review, moderate a room, review platform activity, and suspend a user account when policy enforcement requires it.</p>
+  <p><span class="label">Objects:</span> User, listing, report, feedback item, review, room, account, administrator.</p>
+  <p><span class="label">Actions:</span> Report, submit, inspect, investigate, classify, resolve, dismiss, hide, suspend, restore.</p>
+
+  <h1>8. Identified Problems</h1>
+  <ol>
+    <li><strong>Scattered information.</strong> People must search many social-media groups, Marketplace posts, printed notices, and personal referrals.</li>
+    <li><strong>Incomplete and inconsistent advertisements.</strong> Price, exact area, amenities, room capacity, house rules, and current photos are often missing or formatted differently.</li>
+    <li><strong>Outdated availability.</strong> Posts may remain visible after rooms are occupied, causing repeated calls and wasted trips.</li>
+    <li><strong>Weak property trust.</strong> Informal posts have no consistent verification gate or documented correction process.</li>
+    <li><strong>Difficult comparison.</strong> Searchers cannot easily compare properties using the same location, type, rent, capacity, and amenity criteria.</li>
+    <li><strong>Repeated, unstructured inquiries.</strong> Tenants contact several owners independently, while owners answer the same basic questions without a conversation record.</li>
+    <li><strong>Rental-date conflicts.</strong> Manual calendars or chat-based reservations can lead to overlapping commitments for the same room.</li>
+    <li><strong>Fragmented payment evidence.</strong> Reference numbers, proof images, billing periods, and owner decisions may be scattered across chat applications.</li>
+    <li><strong>Limited accountability after a stay.</strong> Reviews unconnected to an actual rental are easy to fabricate, while genuine tenant experience may not be captured.</li>
+    <li><strong>Weak moderation records.</strong> Reports, feedback, account actions, and property corrections are difficult to track when handled informally.</li>
+  </ol>
+
+  <h1>9. System Scope and Requirements</h1>
+  <h2>9.1 Functional Scope by Subsystem</h2>
+  <table>
+    <tr><th>Subsystem</th><th>Required Functions</th><th>Primary Users</th></tr>
+    <tr><td>Authentication and Profiles</td><td>Register tenant/owner accounts; email confirmation; login/logout; forgotten and reset password; profile update; role-based dashboards; administrative account suspension.</td><td>Tenant, Owner, Admin</td></tr>
+    <tr><td>Property and Address Management</td><td>Create/edit/archive/restore boarding houses; select validated province, city/municipality, and barangay; save PSGC codes; maintain contact details, rules, amenities, current-month requirement, and zero-to-six advance months.</td><td>Owner, Admin</td></tr>
+    <tr><td>Photo Management</td><td>Upload JPEG/PNG/WebP images; manage property and room photos; choose one primary photo; replace/remove images; enforce ownership and private storage paths.</td><td>Owner</td></tr>
+    <tr><td>Verification and Moderation</td><td>Submit a property; approve, reject, or request correction; record remarks and reviewer; invalidate approval after reviewed data changes; moderate rooms, listings, reports, feedback, reviews, and accounts.</td><td>Owner, Admin</td></tr>
+    <tr><td>Rooms and Listings</td><td>Create/edit/archive rooms after property approval; set type, rent, capacity, status, and description; create/edit/publish listings; require approved active property, primary photo, and available room.</td><td>Owner, Admin</td></tr>
+    <tr><td>Public Discovery</td><td>Keyword/location search; price, type, capacity, amenity, and availability filters; sorting and paging; property/room detail; map-ready address; public reviews and occupancy-aware availability.</td><td>Public, Tenant</td></tr>
+    <tr><td>Inquiries</td><td>Create a private thread from a listing; send messages; show unread counts; mark read; close a thread; restrict access to tenant and property owner.</td><td>Tenant, Owner</td></tr>
+    <tr><td>Rental Management</td><td>Request fixed-term/open-ended rental; validate dates; prevent overlaps; owner decision; snapshot rent/payment terms; cancel eligible request/transaction; track reserved/active/ending/completed states.</td><td>Tenant, Owner, Admin</td></tr>
+    <tr><td>Payments</td><td>Record payment type, amount, method, period, reference, proof, and remarks; prevent duplicates; owner review; display participant histories.</td><td>Tenant, Owner, Admin</td></tr>
+    <tr><td>Community and Support</td><td>Allow completed-rental review; report published listing; submit feedback; administrative triage, resolution, dismissal, hiding, or suspension.</td><td>Tenant, Owner, Admin</td></tr>
+  </table>
+
+  <h2>9.2 Nonfunctional Requirements</h2>
+  <ul>
+    <li><strong>Security:</strong> enforce authentication, role checks, ownership checks, Row Level Security (RLS), private object storage, server-side validation, and least-privilege database functions.</li>
+    <li><strong>Data integrity:</strong> use foreign keys, check constraints, unique indexes, date-overlap validation, primary-photo uniqueness, and transactional functions.</li>
+    <li><strong>Usability:</strong> provide responsive public and dashboard pages, clear validation messages, loading/error states, accessible labels, and predictable navigation.</li>
+    <li><strong>Performance:</strong> index common ownership, status, date, location, inquiry, and moderation queries; page discovery and conversation summaries; keep filtering database-side.</li>
+    <li><strong>Maintainability:</strong> use typed TypeScript modules, versioned SQL migrations, generated database types, shared validation, automated tests, and documented deployment steps.</li>
+    <li><strong>Auditability:</strong> retain verification remarks, payment decisions, rental history, report states, timestamps, and actor relationships.</li>
+  </ul>
+
+  <h2>9.3 Scope Boundaries</h2>
+  <ul>
+    <li>BoardingHub records payment details and proof but does not process or settle funds through GCash, a bank, or another payment gateway.</li>
+    <li>The system does not generate legal lease contracts, collect electronic signatures, or replace owner–tenant due diligence.</li>
+    <li>Location uses structured PSGC data and may show OpenStreetMap information or a search link; saving a property does not depend on live geocoding.</li>
+    <li>Email authentication is supported through the configured provider. SMS, push notifications, and emergency services are outside the current scope.</li>
+    <li>Davao City is the pilot market, although the data model supports Philippine locations nationwide.</li>
+  </ul>
+
+  <h1>10. Database Schema and Data Design</h1>
+  <p>BoardingHub uses Supabase PostgreSQL, Supabase Authentication, and private object storage. The current schema has <strong>17 public application tables</strong>. Authentication users are linked one-to-one to <code>profiles</code>; authorization is enforced both in application actions and in PostgreSQL RLS policies.</p>
+
+  <h2>10.1 Major Relationship Model</h2>
+  <table>
+    <tr><th>Parent / Source</th><th>Relationship</th><th>Child / Destination</th></tr>
+    <tr><td>Auth user</td><td>1 : 1</td><td>Profile</td></tr>
+    <tr><td>Owner profile</td><td>1 : many</td><td>Boarding houses</td></tr>
+    <tr><td>Boarding house</td><td>1 : many</td><td>Property photos, rooms, listings, reviews</td></tr>
+    <tr><td>Boarding house</td><td>many : many through junction</td><td>Amenities</td></tr>
+    <tr><td>Room</td><td>1 : many</td><td>Room photos and rental requests</td></tr>
+    <tr><td>Listing</td><td>1 : many</td><td>Inquiry threads, reports, legacy verification history</td></tr>
+    <tr><td>Inquiry thread</td><td>1 : many</td><td>Inquiry messages</td></tr>
+    <tr><td>Rental request</td><td>0..1 : 1</td><td>Rental transaction after approval</td></tr>
+    <tr><td>Rental transaction</td><td>1 : many</td><td>Payments</td></tr>
+    <tr><td>Rental transaction</td><td>0..1 : 1</td><td>Review after completion</td></tr>
+    <tr><td>User profile</td><td>1 : many</td><td>Feedback and listing reports</td></tr>
+  </table>
+
+  <h2>10.2 Integrity and Security Controls</h2>
+  <ul>
+    <li>UUID primary keys and foreign keys preserve referential integrity.</li>
+    <li>Check constraints limit roles, statuses, room types, ratings, payment methods, amounts, date order, and text lengths.</li>
+    <li>Partial unique indexes enforce one primary property photo, one primary room photo, one open inquiry per tenant/listing, one live initial payment, and one live monthly payment per billing period.</li>
+    <li>Rental requests use date-overlap checks and transaction-level advisory locking to prevent concurrent double booking.</li>
+    <li>RLS allows public reads only for active, approved properties with published listings and eligible rooms. Participant-only rules protect inquiries, rentals, and payments.</li>
+    <li>Storage policies validate ownership, bucket, object path, content type, and file size before allowing uploads.</li>
+    <li>Property approval is invalidated when reviewed property facts change, preventing stale approved information from remaining public.</li>
+  </ul>
+  <p>The complete table-by-table dictionary is provided in Appendix A.</p>
+
+  <h1>11. Tangible and Intangible Benefits</h1>
+  <div class="notice">
+    <strong>Planning scenario.</strong> The following calculations satisfy the requirement for at least five measurable benefits. They use a conservative planning labor value of <strong>₱100 per hour</strong>, an average rent of <strong>₱5,000 per month</strong>, and an early operating volume stated in each calculation. These are hypotheses to validate during a pilot—not guaranteed savings or revenue.
+  </div>
+
+  <h2>11.1 Tangible Benefit 1 — Reduced Tenant Search Time</h2>
+  <p>Assume 100 accommodation searches per month and that centralized filters reduce each search by two hours.</p>
+  <div class="formula">100 searches/month × 2 hours × ₱100/hour = ₱20,000/month<br>₱20,000 × 12 months = <strong>₱240,000/year</strong></div>
+
+  <h2>11.2 Tangible Benefit 2 — Reduced Repetitive Owner Inquiry Work</h2>
+  <p>Assume 40 participating owners receive ten common inquiries per month and complete information plus threaded messages save ten minutes per inquiry.</p>
+  <div class="formula">40 owners × 10 inquiries × (10/60 hour) × ₱100/hour = ₱6,666.67/month<br>₱6,666.67 × 12 = <strong>approximately ₱80,000/year</strong></div>
+
+  <h2>11.3 Tangible Benefit 3 — Reduced Vacancy Time</h2>
+  <p>Assume 30 rooms per month fill two days sooner because availability, search, and inquiries are centralized. At ₱5,000 monthly rent, one day is valued at ₱166.67.</p>
+  <div class="formula">₱5,000 ÷ 30 days = ₱166.67/day<br>30 rooms × 2 days × ₱166.67 = ₱10,000/month<br>₱10,000 × 12 = <strong>₱120,000/year</strong></div>
+
+  <h2>11.4 Tangible Benefit 4 — Reduced Advertising Expense</h2>
+  <p>Assume 40 owners each spend ₱300 per month on boosted posts, printing, or repeated advertisements, and the shared platform reduces that expense by 60%.</p>
+  <div class="formula">40 owners × ₱300 × 60% = ₱7,200/month<br>₱7,200 × 12 = <strong>₱86,400/year</strong></div>
+
+  <h2>11.5 Tangible Benefit 5 — Reduced Rental and Payment Reconciliation</h2>
+  <p>Assume staff or owners process 25 rental/payment cases per month and structured records save 20 minutes per case.</p>
+  <div class="formula">25 cases × (20/60 hour) × ₱100/hour = ₱833.33/month<br>₱833.33 × 12 = <strong>approximately ₱10,000/year</strong></div>
+
+  <h2>11.6 Tangible Benefit 6 — Avoided Double-Booking Correction</h2>
+  <p>Assume date validation prevents five overlap incidents per month and each avoided correction would otherwise require 1.5 labor hours.</p>
+  <div class="formula">5 incidents × 1.5 hours × ₱100/hour = ₱750/month<br>₱750 × 12 = <strong>₱9,000/year</strong></div>
+
+  <h2>11.7 Tangible Benefit Summary</h2>
+  <table>
+    <tr><th>Benefit</th><th class="right">Estimated Annual Value</th><th>Beneficiary</th></tr>
+    <tr><td>Reduced tenant search time</td><td class="right">₱240,000</td><td>Tenants/searchers</td></tr>
+    <tr><td>Reduced repetitive owner inquiries</td><td class="right">₱80,000</td><td>Owners</td></tr>
+    <tr><td>Reduced vacancy time</td><td class="right">₱120,000</td><td>Owners</td></tr>
+    <tr><td>Reduced advertising expense</td><td class="right">₱86,400</td><td>Owners</td></tr>
+    <tr><td>Reduced reconciliation work</td><td class="right">₱10,000</td><td>Owners/operations</td></tr>
+    <tr><td>Avoided double-booking correction</td><td class="right">₱9,000</td><td>Tenants/owners</td></tr>
+    <tr><th>Total illustrative annual value</th><th class="right">₱545,400</th><th>Across stakeholders</th></tr>
+  </table>
+  <p>The total is a stakeholder-wide economic value, not automatically BoardingHub revenue. A pilot should measure actual search duration, inquiry volume, vacancy days, advertising cost, and incident rates before using these figures for an investment decision.</p>
+
+  <h2>11.8 Intangible Benefits</h2>
+  <ul>
+    <li>Greater trust through property verification and completed-stay reviews</li>
+    <li>More consistent, comparable property information</li>
+    <li>Improved convenience and accessibility for students and relocating employees</li>
+    <li>Clearer communication history between tenants and owners</li>
+    <li>Better accountability through reports, remarks, timestamps, and status histories</li>
+    <li>Improved privacy because sensitive participant data is protected by RLS and private storage</li>
+    <li>A scalable Philippine address model rather than free-text location only</li>
+    <li>Better management visibility through role-specific dashboards</li>
+  </ul>
+
+  <h1>12. System Alternatives</h1>
+  <p>Two external implementation alternatives were evaluated against the current custom BoardingHub approach. Prices are public list prices accessed on October 1, 2026, excluding taxes and usage overages. Philippine-peso conversions use a planning rate of <strong>₱58 per US$1</strong>; this is an assumption for comparison, not a quoted foreign-exchange rate.</p>
+
+  <h2>12.1 Alternative 1 — WordPress.com Business with Directory Plugins</h2>
+  <p>A WordPress.com Business site can host a professional site and allows third-party themes and plugins. A directory/property plugin could supply property pages, categories, photographs, search, and owner submissions. The published Business price used for this estimate is US$25 per month when billed annually. Custom workflows—property approval invalidation, participant-only inquiries, date-conflict locking, payment review, and RLS-equivalent access—would still require configuration or custom plugin development.</p>
+  <table>
+    <tr><th>Cost Item</th><th>Assumption / Calculation</th><th class="right">Year 1</th></tr>
+    <tr><td>WordPress.com Business</td><td>US$25 × 12 × ₱58</td><td class="right">₱17,400</td></tr>
+    <tr><td>Initial configuration and content setup</td><td>120 hours × ₱200/hour</td><td class="right">₱24,000</td></tr>
+    <tr><td>Routine plugin/content maintenance</td><td>48 hours/year × ₱200/hour</td><td class="right">₱9,600</td></tr>
+    <tr><th>Estimated first-year cost</th><th>Excludes premium plugin licenses and custom integration</th><th class="right">₱51,000</th></tr>
+  </table>
+  <p><strong>Advantages:</strong> quick launch, familiar content management, hosted maintenance, lower initial cost, and many available themes/plugins.</p>
+  <p><strong>Disadvantages:</strong> core BoardingHub rental rules would span multiple plugins; compatibility and upgrades can introduce risk; fine-grained authorization and transaction-safe date handling may require substantial custom work; plugin licenses may increase recurring cost.</p>
+
+  <h2>12.2 Alternative 2 — Outsourced Custom Web Application</h2>
+  <p>A freelancer or external development team could recreate BoardingHub as a custom application. Upwork reports typical web-developer rates of US$15–US$50 per hour; this estimate uses US$30 per hour and 600 hours for discovery, design, implementation, database/security work, testing, and deployment. Production infrastructure uses the current public list prices of Vercel Pro at US$20 per month and Supabase Pro at US$25 per month.</p>
+  <table>
+    <tr><th>Cost Item</th><th>Assumption / Calculation</th><th class="right">Year 1</th></tr>
+    <tr><td>Custom development</td><td>600 hours × US$30 × ₱58</td><td class="right">₱1,044,000</td></tr>
+    <tr><td>Production hosting/backend</td><td>(US$20 + US$25) × 12 × ₱58</td><td class="right">₱31,320</td></tr>
+    <tr><td>Maintenance allowance</td><td>10 hours/month × 12 × US$30 × ₱58</td><td class="right">₱208,800</td></tr>
+    <tr><th>Estimated first-year cost</th><th>Excludes taxes, platform fees, domain, and usage overages</th><th class="right">₱1,284,120</th></tr>
+  </table>
+  <p><strong>Advantages:</strong> high customization, contracted delivery capacity, specialized expertise, formal milestones, and the ability to reproduce detailed business rules.</p>
+  <p><strong>Disadvantages:</strong> highest cost, vendor dependence, knowledge-transfer risk, longer procurement and delivery time, and continuing maintenance fees.</p>
+
+  <h2>12.3 Alternatives Comparison</h2>
+  <table>
+    <tr><th>Criterion</th><th>WordPress.com + Plugins</th><th>Outsourced Custom Application</th><th>Current BoardingHub Codebase</th></tr>
+    <tr><td>Initial cost</td><td>Low</td><td>High</td><td>Development already completed as project work</td></tr>
+    <tr><td>Fit to current schema/workflows</td><td>Low to moderate without custom plugins</td><td>High if fully specified</td><td>High; already implemented</td></tr>
+    <tr><td>Authorization control</td><td>Plugin-dependent</td><td>Customizable</td><td>Application checks + PostgreSQL RLS</td></tr>
+    <tr><td>Date-conflict protection</td><td>Plugin-dependent</td><td>Can be built</td><td>Implemented in database functions</td></tr>
+    <tr><td>Maintenance</td><td>Core/plugin updates</td><td>Vendor contract</td><td>Internal source control and migrations</td></tr>
+    <tr><td>Lock-in</td><td>WordPress/plugin ecosystem</td><td>Vendor and contract</td><td>Portable TypeScript/PostgreSQL code with managed services</td></tr>
+    <tr><td>Time to pilot</td><td>Fast for a basic directory</td><td>Longest</td><td>Shortest because the functional codebase exists</td></tr>
+  </table>
+
+  <h1>13. Recommended System</h1>
+  <p>The recommended choice is to continue with the <strong>current custom BoardingHub web application</strong> using Next.js, TypeScript, React, Supabase PostgreSQL/Auth/Storage, Zod validation, and role-based dashboards. It already implements the business rules that would be expensive or fragile to reproduce through unrelated plugins: property verification, publication gates, participant-only inquiries, occupancy-aware search, overlap-safe rental approval, billing-period checks, verified-stay reviews, and layered database authorization.</p>
+  <p>For a small noncommercial pilot, the project may begin on eligible free tiers. For a commercial production planning baseline, Vercel Pro plus Supabase Pro is US$45 per month, or approximately <strong>₱31,320 per year</strong> at the report’s assumed exchange rate, before taxes and usage overages. Adding an internal maintenance allowance of 120 hours per year at ₱200 per hour (₱24,000) and a ₱6,000 domain/contingency allowance produces an illustrative recurring budget of <strong>₱61,320 per year</strong>. Actual vendor selection and billing should be confirmed immediately before deployment.</p>
+  <p>Recommended implementation priorities are:</p>
+  <ol>
+    <li>Apply and verify all migrations in a controlled Supabase project with backups.</li>
+    <li>Configure authentication redirects, email templates, SMTP, and the trusted first administrator.</li>
+    <li>Run the complete type-check, lint, database, build, browser, workflow, and secret-scanning checks.</li>
+    <li>Pilot with a limited set of Davao City owners and validate property details manually.</li>
+    <li>Measure the assumptions used in the tangible-benefit calculations.</li>
+    <li>Publish privacy, acceptable-use, verification, reporting, and dispute-handling policies before public launch.</li>
+    <li>Only after pilot evidence, consider online payment processing, notifications, contracts, and expanded location services.</li>
+  </ol>
+
+  <h1>14. Conclusion</h1>
+  <p>BoardingHub addresses a practical information and coordination problem in the boarding-house market. Searchers need complete, current, comparable information; owners need a manageable way to present properties, respond to inquiries, decide rental requests, and retain payment and rental records; administrators need controls that improve trust without relying on informal messages.</p>
+  <p>The current project is technically aligned with these needs. Its 17-table relational schema connects users, properties, rooms, listings, conversations, rental periods, payments, reviews, reports, and feedback. Database constraints, transactional functions, RLS, and private storage provide stronger integrity and access control than a simple advertisement site. The latest design correctly makes boarding-house approval the gate for room creation and public listing, while retaining moderation and historical records.</p>
+  <p>Under the explicitly stated planning assumptions, the system could create approximately <strong>₱545,400 in annual stakeholder value</strong>. This figure is not guaranteed and should be replaced with pilot measurements. Compared with a plugin-based directory or outsourced redevelopment, the existing custom codebase is the most practical foundation because it already contains the specialized workflow and data design. Therefore, BoardingHub is feasible as a controlled Davao City pilot, with national technical scalability and clear next steps for production validation.</p>
+
+  <h1>15. References</h1>
+  <ol class="small">
+    <li>BoardingHub repository, <em>README.md</em>, application routes, actions, domain/database types, and Supabase migrations through <code>202610010003_boarding_house_verification.sql</code>, reviewed October 1, 2026.</li>
+    <li>WordPress.com, “Pricing” and “Business Plan Features,” accessed October 1, 2026. <a href="https://wordpress.com/pricing/">https://wordpress.com/pricing/</a> and <a href="https://wordpress.com/support/plan-features/business-plan/">https://wordpress.com/support/plan-features/business-plan/</a>.</li>
+    <li>Upwork, “Web Developer Hourly Rates,” accessed October 1, 2026. <a href="https://www.upwork.com/hire/web-developers/cost/">https://www.upwork.com/hire/web-developers/cost/</a>.</li>
+    <li>Supabase, “Pricing” and “Billing,” accessed October 1, 2026. <a href="https://supabase.com/pricing">https://supabase.com/pricing</a> and <a href="https://supabase.com/docs/guides/platform/billing-on-supabase">https://supabase.com/docs/guides/platform/billing-on-supabase</a>.</li>
+    <li>Vercel, “Pricing,” accessed October 1, 2026. <a href="https://vercel.com/pricing">https://vercel.com/pricing</a>.</li>
+    <li>Milestone 1 PIR template supplied by the instructor, two pages, used for the required report sections and benefit/alternative instructions.</li>
+    <li>Velez, Michael Aguido L., earlier <em>BoardingHub Milestone 1</em> draft, used only for author/course identity and original organizational context; system details were reconciled with the current repository.</li>
+  </ol>
+
+  <h1 class="page-break">Appendix A — Database Data Dictionary</h1>
+  <table>
+    <tr><th>Table</th><th>Purpose and Important Fields</th><th>Key Relationships / Rules</th></tr>
+    <tr><td><code>profiles</code></td><td>Application identity: first/last name, contact, role, status, timestamps.</td><td>Primary key references Auth user; role is tenant/owner/admin; status active/suspended.</td></tr>
+    <tr><td><code>boarding_houses</code></td><td>Property identity, owner, description, PSGC address, contact, rules, operational and verification states, payment terms.</td><td>Belongs to owner profile; parent of rooms, photos, listings, amenities, and reviews.</td></tr>
+    <tr><td><code>rooms</code></td><td>Room number, type, rent, capacity, status, description.</td><td>Belongs to house; unique number per house; single-room capacity normalized to one.</td></tr>
+    <tr><td><code>amenities</code></td><td>Controlled amenity name and description.</td><td>Connected to houses through junction table.</td></tr>
+    <tr><td><code>boarding_house_amenities</code></td><td>Many-to-many association between properties and amenities.</td><td>Composite primary key prevents duplicate assignments.</td></tr>
+    <tr><td><code>boarding_house_photos</code></td><td>Private storage path, primary flag, created time.</td><td>Belongs to house; partial unique index allows one primary photo.</td></tr>
+    <tr><td><code>room_photos</code></td><td>Private room-photo storage path, primary flag, created time.</td><td>Belongs to room; partial unique index allows one primary photo.</td></tr>
+    <tr><td><code>listings</code></td><td>Public marketing title/description, listing status, posting date.</td><td>Belongs to house; public only when property/listing/owner conditions pass.</td></tr>
+    <tr><td><code>listing_verifications</code></td><td>Historical listing-review submissions, reviewer, dates, result, remarks.</td><td>Belongs to listing and optional admin; retained as read-only legacy review history after property-level verification.</td></tr>
+    <tr><td><code>inquiry_threads</code></td><td>Tenant/listing conversation identity, open/closed status, activity times.</td><td>One open thread per tenant/listing; participants derive owner through listing and house.</td></tr>
+    <tr><td><code>inquiry_messages</code></td><td>Message body, sender, created and read timestamps.</td><td>Belongs to thread and sender profile; participant-only access.</td></tr>
+    <tr><td><code>rental_requests</code></td><td>Tenant, room, move-in, rental type, optional expected move-out, request status.</td><td>Date rules distinguish fixed/open-ended requests; approved request may create one transaction.</td></tr>
+    <tr><td><code>rental_transactions</code></td><td>Approved stay, dates, snapshotted rent/payment terms, initial amount, lifecycle status.</td><td>Unique request reference; belongs to tenant and room; used for availability, payments, and review.</td></tr>
+    <tr><td><code>payments</code></td><td>Type, billing period, amount, date, method, reference, proof path, decision status, remarks.</td><td>Belongs to rental transaction; unique live initial/monthly-period rules.</td></tr>
+    <tr><td><code>reviews</code></td><td>One-to-five rating, optional comment, published/hidden status.</td><td>Belongs to tenant, property, and exactly one completed rental; one review per transaction.</td></tr>
+    <tr><td><code>listing_reports</code></td><td>Listing complaint reason, description, reported time, moderation status.</td><td>Belongs to reporter profile and published listing; admin can suspend listing while resolving.</td></tr>
+    <tr><td><code>feedback</code></td><td>User-submitted subject, message, date, and processing status.</td><td>Belongs to profile; admin controls under-review/resolved/dismissed state.</td></tr>
+  </table>
+
+  <h1 class="page-break">Appendix B — Problem-to-Feature Traceability</h1>
+  <table>
+    <tr><th>Identified Problem</th><th>BoardingHub Response</th><th>Principal Tables</th></tr>
+    <tr><td>Scattered information</td><td>Central public discovery and detail pages.</td><td>boarding_houses, rooms, listings</td></tr>
+    <tr><td>Incomplete/inconsistent ads</td><td>Structured property, address, room, amenity, photo, rule, and payment-term fields.</td><td>boarding_houses, rooms, amenities, photos</td></tr>
+    <tr><td>Outdated room availability</td><td>Room lifecycle plus transaction-aware public availability.</td><td>rooms, rental_transactions</td></tr>
+    <tr><td>Weak property trust</td><td>Property submission, admin review, correction remarks, and approval invalidation after material edits.</td><td>boarding_houses, profiles</td></tr>
+    <tr><td>Difficult comparison</td><td>Database-side filters and consistent detail model.</td><td>boarding_houses, rooms, amenities, listings</td></tr>
+    <tr><td>Repeated inquiries</td><td>Private threaded conversations with read state and summaries.</td><td>inquiry_threads, inquiry_messages</td></tr>
+    <tr><td>Rental-date conflicts</td><td>Period validation, overlap checks, transaction locks, and conflict resolution.</td><td>rental_requests, rental_transactions</td></tr>
+    <tr><td>Fragmented payment evidence</td><td>Structured payment, proof, billing period, reference, and owner decision.</td><td>payments, rental_transactions</td></tr>
+    <tr><td>Unreliable public reviews</td><td>Only tenant of a completed rental may review; one review per transaction.</td><td>reviews, rental_transactions</td></tr>
+    <tr><td>Weak moderation records</td><td>Tracked report/feedback states, account status, property remarks, and timestamps.</td><td>listing_reports, feedback, profiles, boarding_houses</td></tr>
+  </table>
+
+</body>
+</html>

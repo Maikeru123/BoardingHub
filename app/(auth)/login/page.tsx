@@ -10,9 +10,9 @@ const notices: Record<string, string> = {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ notice?: string }>
+  searchParams: Promise<{ notice?: string; next?: string }>
 }) {
-  const { notice } = await searchParams
+  const { notice, next } = await searchParams
   return (
     <>
       <p className="mb-3 text-xs font-semibold tracking-[0.15em] text-primary uppercase">
@@ -37,7 +37,7 @@ export default async function LoginPage({
           <AlertDescription>{notices[notice]}</AlertDescription>
         </Alert>
       )}
-      <LoginForm />
+      <LoginForm next={next} />
     </>
   )
 }

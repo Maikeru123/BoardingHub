@@ -2,7 +2,9 @@
 
 Boarding house discovery and property management built with Next.js 16 App Router, TypeScript, Tailwind CSS, shadcn/ui (Base UI), Supabase, React Hook Form, and Zod.
 
-Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboards, boarding houses, rooms, amenities, listings, private photos, and administrator verification. Rental requests, messages, rentals, payments, reviews, reports, and date-based availability remain outside this phase.
+Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboards, boarding houses, rooms, amenities, listings, private photos, and administrator verification. Phase 2 adds public discovery with URL-based search and filters, property and room details, gallery and map-ready location views, and private tenant-to-owner inquiry threads with read state. Rental requests, transactions, payments, reviews, reports, and date-based conflict validation remain reserved for Phase 3.
+
+Philippine address selection uses the bundled `@ianlabicani/geoph-lite` Second Quarter 2026 PSGC snapshot. It performs no runtime location-API requests and needs no location API key. Updating that dependency is the explicit path for adopting later official PSGC releases.
 
 1. **Install and configure**
 
@@ -36,7 +38,7 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
    npm run db:types
    ```
 
-   The migrations create all eight application tables, constraints, indexes, triggers, RLS, RPCs, amenities, and the private `listing-photos` bucket with its policies. Do not manually create the tables or bucket. The initial migrations expect those application tables not to exist already. Review existing migration history if the project has previously created them.
+   The migrations create all ten application tables, constraints, indexes, triggers, RLS, RPCs, amenities, and the private `boarding-house-photos` bucket with its policies. The Phase 1 revision migration safely transfers existing `listing_photos` rows to `boarding_house_photos`. The Phase 2 migration adds normalized `inquiry_threads` and `inquiry_messages`, participant-only policies, atomic messaging functions, and database-side discovery filtering. It keeps the old `listing-photos` bucket private for migrated object compatibility; all new uploads use `boarding-houses/{ownerId}/{boardingHouseId}/{generatedFileName}`. After verifying that no migrated rows use legacy paths, an empty legacy bucket may be removed through the Supabase Storage API or Dashboard, never by deleting from `storage.buckets` in SQL. Do not manually create the tables or buckets. The initial migrations expect those application tables not to exist already. Always inspect the dry run and existing migration history before pushing to a project with data.
 
    `npm run db:types` replaces `types/database.ts` only after generation succeeds. Domain aliases are kept in `types/domain.ts`. Clients use `types/supabase.ts` to preserve the nullable `house_id` RPC argument used when creating a property; the generator cannot infer this SQL contract.
 
@@ -56,13 +58,18 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
    Confirmation:
 
    ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup">Confirm your email</a>
+   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=signup"
+     >Confirm your email</a
+   >
    ```
 
    Password recovery:
 
    ```html
-   <a href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery">Reset your password</a>
+   <a
+     href="{{ .SiteURL }}/auth/confirm?token_hash={{ .TokenHash }}&type=recovery"
+     >Reset your password</a
+   >
    ```
 
    The `/auth/callback` route also supports the normal PKCE code exchange. Neither callback accepts arbitrary external redirect destinations. Configure your SMTP provider for production email delivery. These hosted authentication settings are separate from schema migrations; `supabase/config.toml` configures local development.
@@ -98,7 +105,17 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
 
    No public registration, profile update, user metadata, or administrator UI can assign an admin role. The Auth trigger accepts `tenant`/`owner` and maps every other requested role to `tenant`. The trigger inserts the profile in the same transaction as the Auth user, so registration cannot succeed with a missing profile. Existing Auth users are backfilled by the first migration.
 
-5. **Run locally**
+5. **Seed one account for each role**
+
+   With the CLI authenticated and linked to the same migrated project as `.env.local`, run:
+
+   ```powershell
+   npm run db:seed:accounts
+   ```
+
+   This provisions and verifies exactly three confirmed accounts: `admin@boardinghub.test`, `owner@boardinghub.test`, and `tenant@boardinghub.test`. Their random initial passwords are written to the Git-ignored `.seed-credentials.local.json`; no administrative key is written to disk. The command is safe to resume with that file after an interrupted run, preserves unrelated Auth users, and refuses to take over a matching pre-existing email whose credentials it does not own. Change the passwords before real production use, then delete the local credentials file.
+
+6. **Run locally**
 
    ```powershell
    npm run dev
@@ -114,7 +131,30 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
 
    The reset command recreates the local database and deletes its local data. Use the local API URL and public anon key printed by the CLI in `.env.local`. Local email messages are available at `http://localhost:54324`. Never copy a service role key into any `NEXT_PUBLIC_` variable.
 
-6. **Verify changes**
+7. **Deploy to Vercel**
+
+   Import the repository into Vercel as a Next.js project. BoardingHub uses Vercel's standard Next.js build without a custom `vercel.json`; `package.json` pins the deployment runtime to Node.js 22. Add these variables to the Production environment before the first deployment:
+
+   ```dotenv
+   NEXT_PUBLIC_SUPABASE_URL=https://your-project-id.supabase.co
+   NEXT_PUBLIC_SUPABASE_ANON_KEY=your-public-publishable-or-anon-key
+   NEXT_PUBLIC_SITE_URL=https://your-production-domain.example
+   ```
+
+   Set the same Supabase URL and public key for Preview deployments if previews should use the production backend. Set `NEXT_PUBLIC_SITE_URL` to the canonical production origin, or use an isolated Supabase preview project when preview deployments must send their own authentication emails. Never add a service-role key or database password to Vercel; the deployed app does not require either one.
+
+   In Supabase Authentication > URL Configuration, set the Site URL to the canonical `NEXT_PUBLIC_SITE_URL` value and allow these exact production redirects:
+
+   ```text
+   https://your-production-domain.example/auth/callback
+   https://your-production-domain.example/auth/callback?next=/reset-password
+   https://your-production-domain.example/auth/confirm
+   https://your-production-domain.example/reset-password
+   ```
+
+   If authentication is intentionally enabled on Vercel previews, also allow `https://*-your-team-slug.vercel.app/**`. Prefer the exact production paths above for production. Apply and verify Supabase migrations before deploying app code that depends on them. Environment-variable changes only affect new Vercel deployments, so redeploy after changing any value.
+
+8. **Verify changes**
 
    ```powershell
    npm run typecheck
@@ -125,11 +165,11 @@ Phase 1 includes authentication, profiles and roles, tenant/owner/admin dashboar
    npm run check:secrets
    ```
 
-   Browser tests use installed Microsoft Edge on Windows. On other platforms, run `npx playwright install chromium` first. Override the browser with `PLAYWRIGHT_CHANNEL` if needed. Playwright starts a production server on port 3100, so build before running it. Run this public smoke suite against a build with no configured Supabase credentials; it does not send email or create accounts.
+   Browser tests use installed Microsoft Edge on Windows. On other platforms, run `npx playwright install chromium` first. Override the browser with `PLAYWRIGHT_CHANNEL` if needed. Playwright starts a production server on port 3100, so build before running it. The public smoke suite does not send email or create accounts. It can run without Supabase credentials; a configured project must have all migrations applied for live discovery data.
 
    The database suite runs the actual SQL migrations under PostgreSQL through PGlite. It supplies minimal Supabase-owned Auth/Storage scaffolding and switches database roles to check RLS. It does not replace testing GoTrue email delivery, Storage HTTP uploads, cookie refresh, and authenticated browser flows against the configured Supabase project.
 
-   With a configured production build and authenticated Supabase CLI, `npm run test:e2e:workflow` starts a temporary local server and checks draft creation, photo upload, owner submission, admin visibility, and correction feedback. This explicit live test creates temporary accounts and records in the linked project and removes its own fixtures afterward. It sends no email.
+   With a configured production build, all migrations applied, and an authenticated Supabase CLI, `npm run test:e2e:workflow` starts a temporary local server and checks property creation, property-photo upload, room/listing creation, owner submission, admin visibility, and correction feedback. This explicit live test creates temporary accounts and records in the linked project and removes its own fixtures afterward. It sends no email.
 
    Before pushing, run `npm run check:secrets -- --staged` after staging. Add `--history` to inspect local Git history as well. The scanner reports only finding types and file locations. Ignoring a file does not untrack it or erase earlier commits. An exposed credential should be replaced through its provider; deleting its current file is insufficient. See the [repository security review](docs/security-review.md) for the recorded history finding and remaining action.
 

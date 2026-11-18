@@ -4,6 +4,8 @@ import { DashboardHeader, LinkButton } from "@/components/shared"
 import { ListingTable } from "@/components/management-tables"
 export default async function ListingsPage() {
   const { houses, listings } = await getOwnerData()
+  const activeHouses = houses.filter((house) => house.status === "active")
+  const activeHouseIds = new Set(activeHouses.map((house) => house.id))
   return (
     <>
       <DashboardHeader
@@ -16,7 +18,12 @@ export default async function ListingsPage() {
           </LinkButton>
         }
       />
-      <ListingTable listings={listings} houses={houses} />
+      <ListingTable
+        listings={listings.filter((listing) =>
+          activeHouseIds.has(listing.boarding_house_id)
+        )}
+        houses={activeHouses}
+      />
     </>
   )
 }

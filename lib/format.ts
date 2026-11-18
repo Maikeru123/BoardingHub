@@ -16,9 +16,16 @@ export const label = (value: string) =>
 export const address = (house: {
   street?: string | null
   barangay?: string | null
-  city?: string | null
+  city_municipality?: string | null
   province?: string | null
+  postal_code?: string | null
 }) =>
-  [house.street, house.barangay, house.city, house.province]
+  [
+    house.street,
+    house.barangay,
+    house.city_municipality,
+    house.province,
+    house.postal_code,
+  ]
     .filter(Boolean)
     .join(", ")

@@ -7,7 +7,11 @@ export default async function NewRoomPage({
   searchParams: Promise<{ house?: string }>
 }) {
   const { house } = await searchParams
-  const { houses } = await getOwnerData()
+  const { houses: allHouses } = await getOwnerData()
+  const houses = allHouses.filter(
+    (item) =>
+      item.status === "active" && item.verification_status === "approved"
+  )
   return (
     <>
       <DashboardHeader
@@ -21,11 +25,11 @@ export default async function NewRoomPage({
         />
       ) : (
         <EmptyState
-          title="Add a boarding house first."
-          description="Rooms belong to a property. Create your property before adding rooms."
+          title="Verify a boarding house first."
+          description="This boarding house must be verified before rooms can be added. Upload property photos and submit it for administrator review."
           action={
-            <LinkButton href="/owner/boarding-houses/new">
-              Add boarding house
+            <LinkButton href="/owner/boarding-houses">
+              View boarding houses
             </LinkButton>
           }
         />

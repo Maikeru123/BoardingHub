@@ -4,8 +4,9 @@ import {
   UserMenu,
   DashboardBreadcrumbs,
 } from "./navigation"
+import { getNavigationUnreadCount } from "@/lib/data/inquiries"
 import type { Profile, Role } from "@/types/domain"
-export function DashboardShell({
+export async function DashboardShell({
   profile,
   children,
 }: {
@@ -13,16 +14,23 @@ export function DashboardShell({
   children: React.ReactNode
 }) {
   const role = profile.role as Role
+  const unreadInquiryCount =
+    role === "tenant" || role === "owner"
+      ? await getNavigationUnreadCount(role)
+      : 0
   return (
     <div className="min-h-screen">
-      <Sidebar role={role} />
+      <Sidebar role={role} unreadInquiryCount={unreadInquiryCount} />
       <div className="lg:pl-64">
         <header className="sticky top-0 z-20 flex h-[76px] items-center justify-between gap-4 border-b bg-card/95 px-5 backdrop-blur-sm sm:px-8">
           <div className="flex items-center gap-3">
-            <MobileNavigation role={role} />
+            <MobileNavigation
+              role={role}
+              unreadInquiryCount={unreadInquiryCount}
+            />
             <DashboardBreadcrumbs role={role} />
           </div>
-          <UserMenu profile={profile} />
+          <UserMenu profile={profile} unreadInquiryCount={unreadInquiryCount} />
         </header>
         <main
           id="main-content"

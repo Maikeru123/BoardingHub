@@ -13,7 +13,7 @@ import { createClient } from "@supabase/supabase-js"
 // Explicit live integration test: run only with npm run test:e2e:workflow.
 // It uses temporary accounts/property/photos and cleans up its own IDs only.
 test(
-  "owner saves a draft, submits it, and admin can review it",
+  "boarding house approval gates rooms and listings publish without a second review",
   { timeout: 150_000 },
   async (t) => {
     const env = parseEnv(
@@ -156,19 +156,15 @@ test(
           amenity_ids: [],
           details: {
             name: title,
-            city: "Test City",
-            province: "Test Province",
+            barangay: "Lahug",
+            city_municipality: "City of Cebu",
+            province: "Cebu",
+            barangay_code: "0730600041",
+            city_municipality_code: "0730600000",
+            province_code: "0702200000",
+            postal_code: "6000",
             status: "active",
           },
-        })
-      )
-      await checked(
-        ownerClient.from("rooms").insert({
-          boarding_house_id: houseId,
-          room_number: "Test 1",
-          room_type: "single",
-          monthly_rent: 5000,
-          capacity: 1,
         })
       )
       browser = await chromium.launch({
@@ -181,11 +177,71 @@ test(
       const ownerPage = await ownerContext.newPage()
       const adminPage = await adminContext.newPage()
       await signIn(ownerPage, owner, "owner")
+      await ownerPage.goto(
+        `${baseURL}/owner/boarding-houses/${houseId}/edit#property-photos`
+      )
+      await ownerPage
+        .getByLabel("Choose boarding house photos")
+        .setInputFiles(
+          fileURLToPath(new URL("../public/bh1.jpg", import.meta.url))
+        )
+      await ownerPage
+        .getByRole("button", { name: "Upload 1 photo", exact: true })
+        .click()
+      await expect(
+        ownerPage.getByRole("img", { name: "Primary boarding house photo" })
+      ).toBeVisible({ timeout: 30_000 })
+      await ownerPage
+        .getByRole("button", { name: "Submit for verification" })
+        .click()
+      await ownerPage
+        .getByRole("alertdialog")
+        .getByRole("button", { name: "Confirm", exact: true })
+        .click()
+
+      await signIn(adminPage, reviewer, "admin")
+      await adminPage
+        .getByRole("link", {
+          name: "Boarding house verification",
+          exact: true,
+        })
+        .click()
+      const verificationRow = adminPage
+        .getByRole("row")
+        .filter({ hasText: title })
+      await expect(verificationRow).toContainText("Pending", {
+        timeout: 30_000,
+      })
+      await verificationRow.getByRole("link", { name: "Review" }).click()
+      await adminPage
+        .getByRole("button", { name: "Save review", exact: true })
+        .click()
+      await adminPage
+        .getByRole("button", { name: "Confirm decision", exact: true })
+        .click()
+      await expect(adminPage).toHaveURL(`${baseURL}/admin/verifications`, {
+        timeout: 20_000,
+      })
+
+      const room = await checked(
+        ownerClient
+          .from("rooms")
+          .insert({
+            boarding_house_id: houseId,
+            room_number: "Test 1",
+            room_type: "single",
+            monthly_rent: 5000,
+            capacity: 9,
+          })
+          .select("capacity")
+          .single()
+      )
+      assert.equal(room.capacity, 1)
       await ownerPage.goto(`${baseURL}/owner/listings/new`)
       await ownerPage.getByLabel("Listing title").fill(title)
       const started = Date.now()
       await ownerPage
-        .getByRole("button", { name: "Save draft and continue" })
+        .getByRole("button", { name: "Save listing draft" })
         .click()
       await expect(
         ownerPage.getByRole("heading", {
@@ -196,84 +252,24 @@ test(
       listingId = new URL(ownerPage.url()).pathname.split("/").at(-1)
       assert.match(listingId, /^[0-9a-f-]{36}$/)
       await expect(
-        ownerPage.getByRole("button", { name: "Submit for review" })
-      ).toBeDisabled()
-      await expect(
-        ownerPage.getByRole("link", { name: "Add a photo below" })
-      ).toBeVisible()
+        ownerPage.getByRole("button", { name: "Publish listing" })
+      ).toBeEnabled()
       await ownerPage
         .getByRole("navigation", { name: "Dashboard navigation" })
         .getByRole("link", { name: "Listings", exact: true })
         .click()
       await expect(
         ownerPage.getByRole("row").filter({ hasText: title })
-      ).toContainText("Not submitted for review", { timeout: 20_000 })
+      ).toContainText("Not published", { timeout: 20_000 })
       await ownerPage.getByRole("link", { name: title, exact: true }).click()
-
-      await signIn(adminPage, reviewer, "admin")
-      await adminPage
-        .getByRole("link", { name: "All listings", exact: true })
-        .click()
-      await expect(
-        adminPage.getByRole("row").filter({ hasText: title })
-      ).toContainText("Draft", { timeout: 20_000 })
-      await adminPage
-        .getByRole("link", { name: "Listing verification", exact: true })
-        .click()
-      await expect(
-        adminPage.getByRole("heading", { name: "Listing verification" })
-      ).toBeVisible()
-      await expect(
-        adminPage.getByRole("row").filter({ hasText: title })
-      ).toHaveCount(0)
-
-      await ownerPage
-        .locator('input[type="file"]')
-        .setInputFiles(
-          fileURLToPath(new URL("../public/bh1.jpg", import.meta.url))
-        )
-      await expect(
-        ownerPage.getByRole("button", { name: "Submit for review" })
-      ).toBeEnabled({ timeout: 30_000 })
-      await ownerPage.getByRole("button", { name: "Submit for review" }).click()
+      await ownerPage.getByRole("button", { name: "Publish listing" }).click()
       await ownerPage
         .getByRole("alertdialog")
         .getByRole("button", { name: "Confirm", exact: true })
         .click()
       await expect(
-        ownerPage.getByText(
-          "Submitted for administrator review. You can follow the decision in Verification status."
-        )
+        ownerPage.getByText("Published", { exact: true })
       ).toBeVisible({ timeout: 30_000 })
-      await expect(
-        ownerPage.getByRole("button", { name: "Upload photo" })
-      ).toHaveCount(0)
-      await adminPage.reload()
-      const row = adminPage.getByRole("row").filter({ hasText: title })
-      await expect(row).toContainText("Pending", { timeout: 20_000 })
-      await row.getByRole("link", { name: "Review" }).click()
-      await expect(
-        adminPage.getByRole("img", { name: `${title} — photo 1` })
-      ).toBeVisible({ timeout: 20_000 })
-      await adminPage
-        .getByLabel("Review decision")
-        .selectOption("for_correction")
-      await adminPage
-        .getByLabel("Remarks")
-        .fill("Please add another property photo for this test.")
-      await adminPage
-        .getByRole("button", { name: "Save review", exact: true })
-        .click()
-      await adminPage
-        .getByRole("button", { name: "Confirm decision", exact: true })
-        .click()
-      await expect(adminPage).toHaveURL(`${baseURL}/admin/verifications`, {
-        timeout: 20_000,
-      })
-      await ownerPage.reload()
-      await expect(
-        ownerPage.getByText("Please add another property photo for this test.")
-      ).toBeVisible({ timeout: 20_000 })
       const listing = await checked(
         ownerClient
           .from("listings")
@@ -281,21 +277,21 @@ test(
           .eq("id", listingId)
           .single()
       )
-      assert.equal(listing.listing_status, "draft")
+      assert.equal(listing.listing_status, "published")
     } finally {
       await browser?.close()
       // Every cleanup is scoped to IDs created by this invocation.
-      if (listingId) {
+      if (houseId) {
         const photos = await checked(
           admin
-            .from("listing_photos")
+            .from("boarding_house_photos")
             .select("image_path")
-            .eq("listing_id", listingId)
+            .eq("boarding_house_id", houseId)
         )
         if (photos.length)
           await checked(
             admin.storage
-              .from("listing-photos")
+              .from("boarding-house-photos")
               .remove(photos.map((photo) => photo.image_path))
           )
       }

@@ -69,12 +69,12 @@ function Submit({
     </Button>
   )
 }
-export function LoginForm() {
+export function LoginForm({ next }: { next?: string }) {
   const form = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
     defaultValues: { email: "", password: "" },
   })
-  const { result, submit } = useAuthSubmit(login)
+  const { result, submit } = useAuthSubmit((values) => login(values, next))
   return (
     <Form {...form}>
       <form onSubmit={form.handleSubmit(submit)} className="space-y-5">

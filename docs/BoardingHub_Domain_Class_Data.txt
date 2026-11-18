@@ -1,0 +1,364 @@
+BOARDINGHUB DOMAIN CLASS DATA
+
+Schema: public
+Source of truth: final Supabase schema after all migrations through 202610010004_schema_naming_cleanup.sql
+
+Cardinality notation:
+- 1 = exactly one
+- 0..1 = zero or one
+- 0..* = zero or many
+
+
+profiles
+
+Fields:
+- id : UUID [PK] [FK -> auth.users.id]
+- first_name : TEXT
+- last_name : TEXT
+- contact_number : TEXT [NULLABLE]
+- role : TEXT
+- status : TEXT
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- auth.users 1 ---- 0..1 profiles
+- profiles 1 ---- 0..* boarding_houses [owner_id]
+- profiles 0..1 ---- 0..* boarding_houses [verified_by_admin_id]
+- profiles 1 ---- 0..* inquiry_threads [tenant_id]
+- profiles 1 ---- 0..* inquiry_messages [sender_id]
+- profiles 1 ---- 0..* rental_requests [tenant_id]
+- profiles 1 ---- 0..* rental_transactions [tenant_id]
+- profiles 1 ---- 0..* listing_reports [reporter_id]
+- profiles 1 ---- 0..* feedback [submitted_by_id]
+- profiles 1 ---- 0..* reviews [tenant_id]
+- profiles 0..1 ---- 0..* listing_verifications [admin_id]
+
+
+boarding_houses
+
+Fields:
+- id : UUID [PK]
+- owner_id : UUID [FK -> profiles.id]
+- name : TEXT
+- description : TEXT [NULLABLE]
+- street : TEXT [NULLABLE]
+- barangay : TEXT [NULLABLE]
+- city_municipality : TEXT [NULLABLE]
+- province : TEXT [NULLABLE]
+- latitude : NUMERIC(10,7) [NULLABLE]
+- longitude : NUMERIC(10,7) [NULLABLE]
+- contact_number : TEXT [NULLABLE]
+- house_rules : TEXT [NULLABLE]
+- status : TEXT
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+- postal_code : TEXT [NULLABLE]
+- province_code : TEXT [NULLABLE]
+- city_municipality_code : TEXT [NULLABLE]
+- barangay_code : TEXT [NULLABLE]
+- current_month_required : BOOLEAN
+- advance_months_required : INTEGER
+- verification_status : TEXT
+- verification_remarks : TEXT [NULLABLE]
+- verification_submitted_at : TIMESTAMPTZ [NULLABLE]
+- verified_by_admin_id : UUID [FK -> profiles.id] [NULLABLE]
+- verified_at : TIMESTAMPTZ [NULLABLE]
+
+Relationships:
+- profiles 1 ---- 0..* boarding_houses [owner_id]
+- profiles 0..1 ---- 0..* boarding_houses [verified_by_admin_id]
+- boarding_houses 1 ---- 0..* boarding_house_amenities
+- boarding_houses 1 ---- 0..* boarding_house_photos
+- boarding_houses 1 ---- 0..* rooms
+- boarding_houses 1 ---- 0..* listings
+- boarding_houses 1 ---- 0..* reviews
+- boarding_houses 0..* ---- 0..* amenities [through boarding_house_amenities]
+
+
+amenities
+
+Fields:
+- id : UUID [PK]
+- name : TEXT
+- description : TEXT [NULLABLE]
+
+Relationships:
+- amenities 1 ---- 0..* boarding_house_amenities
+- amenities 0..* ---- 0..* boarding_houses [through boarding_house_amenities]
+
+
+boarding_house_amenities
+
+Fields:
+- boarding_house_id : UUID [PK] [FK -> boarding_houses.id]
+- amenity_id : UUID [PK] [FK -> amenities.id]
+
+Relationships:
+- boarding_houses 1 ---- 0..* boarding_house_amenities
+- amenities 1 ---- 0..* boarding_house_amenities
+- boarding_houses 0..* ---- 0..* amenities [junction table]
+
+
+boarding_house_photos
+
+Fields:
+- id : UUID [PK]
+- boarding_house_id : UUID [FK -> boarding_houses.id]
+- image_path : TEXT
+- is_primary : BOOLEAN
+- created_at : TIMESTAMPTZ
+
+Relationships:
+- boarding_houses 1 ---- 0..* boarding_house_photos
+
+
+rooms
+
+Fields:
+- id : UUID [PK]
+- boarding_house_id : UUID [FK -> boarding_houses.id]
+- room_number : TEXT [NULLABLE]
+- room_type : TEXT
+- monthly_rent : NUMERIC(12,2)
+- capacity : INTEGER
+- status : TEXT
+- description : TEXT [NULLABLE]
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- boarding_houses 1 ---- 0..* rooms
+- rooms 1 ---- 0..* room_photos
+- rooms 1 ---- 0..* rental_requests
+- rooms 1 ---- 0..* rental_transactions
+
+
+room_photos
+
+Fields:
+- id : UUID [PK]
+- room_id : UUID [FK -> rooms.id]
+- image_path : TEXT
+- is_primary : BOOLEAN
+- created_at : TIMESTAMPTZ
+
+Relationships:
+- rooms 1 ---- 0..* room_photos
+
+
+listings
+
+Fields:
+- id : UUID [PK]
+- boarding_house_id : UUID [FK -> boarding_houses.id]
+- title : TEXT
+- description : TEXT [NULLABLE]
+- listing_status : TEXT
+- date_posted : TIMESTAMPTZ [NULLABLE]
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- boarding_houses 1 ---- 0..* listings
+- listings 1 ---- 0..* inquiry_threads
+- listings 1 ---- 0..* listing_reports
+- listings 1 ---- 0..* listing_verifications
+
+
+listing_verifications
+
+Fields:
+- id : UUID [PK]
+- listing_id : UUID [FK -> listings.id]
+- admin_id : UUID [FK -> profiles.id] [NULLABLE]
+- date_submitted : TIMESTAMPTZ
+- date_reviewed : TIMESTAMPTZ [NULLABLE]
+- status : TEXT
+- remarks : TEXT [NULLABLE]
+
+Relationships:
+- listings 1 ---- 0..* listing_verifications
+- profiles 0..1 ---- 0..* listing_verifications [admin_id]
+
+
+inquiry_threads
+
+Fields:
+- id : UUID [PK]
+- tenant_id : UUID [FK -> profiles.id]
+- listing_id : UUID [FK -> listings.id]
+- status : TEXT
+- last_message_at : TIMESTAMPTZ [NULLABLE]
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- profiles 1 ---- 0..* inquiry_threads [tenant_id]
+- listings 1 ---- 0..* inquiry_threads
+- inquiry_threads 1 ---- 0..* inquiry_messages
+
+
+inquiry_messages
+
+Fields:
+- id : UUID [PK]
+- thread_id : UUID [FK -> inquiry_threads.id]
+- sender_id : UUID [FK -> profiles.id]
+- message : TEXT
+- created_at : TIMESTAMPTZ
+- read_at : TIMESTAMPTZ [NULLABLE]
+
+Relationships:
+- inquiry_threads 1 ---- 0..* inquiry_messages
+- profiles 1 ---- 0..* inquiry_messages [sender_id]
+
+
+rental_requests
+
+Fields:
+- id : UUID [PK]
+- tenant_id : UUID [FK -> profiles.id]
+- room_id : UUID [FK -> rooms.id]
+- move_in_date : DATE
+- rental_type : TEXT
+- expected_move_out_date : DATE [NULLABLE]
+- request_date : TIMESTAMPTZ
+- status : TEXT
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+- rejection_reason : TEXT [NULLABLE]
+
+Relationships:
+- profiles 1 ---- 0..* rental_requests [tenant_id]
+- rooms 1 ---- 0..* rental_requests
+- rental_requests 1 ---- 0..1 rental_transactions
+
+
+rental_transactions
+
+Fields:
+- id : UUID [PK]
+- rental_request_id : UUID [FK -> rental_requests.id] [UNIQUE]
+- tenant_id : UUID [FK -> profiles.id]
+- room_id : UUID [FK -> rooms.id]
+- start_date : DATE
+- expected_end_date : DATE [NULLABLE]
+- actual_end_date : DATE [NULLABLE]
+- monthly_rent : NUMERIC(12,2)
+- rental_type : TEXT
+- current_month_required : BOOLEAN
+- advance_months_required : INTEGER
+- initial_payment_amount : NUMERIC(12,2)
+- status : TEXT
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- rental_requests 1 ---- 0..1 rental_transactions
+- profiles 1 ---- 0..* rental_transactions [tenant_id]
+- rooms 1 ---- 0..* rental_transactions
+- rental_transactions 1 ---- 0..* payments
+- rental_transactions 1 ---- 0..1 reviews
+
+
+payments
+
+Fields:
+- id : UUID [PK]
+- rental_transaction_id : UUID [FK -> rental_transactions.id]
+- payment_type : TEXT
+- billing_period_start : DATE [NULLABLE]
+- billing_period_end : DATE [NULLABLE]
+- amount : NUMERIC(12,2)
+- payment_date : TIMESTAMPTZ
+- payment_method : TEXT
+- reference_number : TEXT [NULLABLE]
+- proof_image_path : TEXT [NULLABLE]
+- payment_status : TEXT
+- remarks : TEXT [NULLABLE]
+- created_at : TIMESTAMPTZ
+- updated_at : TIMESTAMPTZ
+
+Relationships:
+- rental_transactions 1 ---- 0..* payments
+
+
+reviews
+
+Fields:
+- id : UUID [PK]
+- tenant_id : UUID [FK -> profiles.id]
+- boarding_house_id : UUID [FK -> boarding_houses.id]
+- rental_transaction_id : UUID [FK -> rental_transactions.id] [UNIQUE]
+- rating : INTEGER
+- comment : TEXT [NULLABLE]
+- status : TEXT
+- created_at : TIMESTAMPTZ
+
+Relationships:
+- profiles 1 ---- 0..* reviews [tenant_id]
+- boarding_houses 1 ---- 0..* reviews
+- rental_transactions 1 ---- 0..1 reviews
+
+
+listing_reports
+
+Fields:
+- id : UUID [PK]
+- reporter_id : UUID [FK -> profiles.id]
+- listing_id : UUID [FK -> listings.id]
+- reason : TEXT
+- description : TEXT [NULLABLE]
+- date_reported : TIMESTAMPTZ
+- status : TEXT
+
+Relationships:
+- profiles 1 ---- 0..* listing_reports [reporter_id]
+- listings 1 ---- 0..* listing_reports
+
+
+feedback
+
+Fields:
+- id : UUID [PK]
+- submitted_by_id : UUID [FK -> profiles.id]
+- subject : TEXT
+- message : TEXT
+- date_submitted : TIMESTAMPTZ
+- status : TEXT
+
+Relationships:
+- profiles 1 ---- 0..* feedback [submitted_by_id]
+
+
+DOMAIN CLASS RELATIONSHIP SUMMARY
+
+- auth.users 1 ---- 0..1 profiles [profiles.id -> auth.users.id]
+- profiles 1 ---- 0..* boarding_houses [boarding_houses.owner_id -> profiles.id]
+- profiles 0..1 ---- 0..* boarding_houses [boarding_houses.verified_by_admin_id -> profiles.id]
+- boarding_houses 1 ---- 0..* boarding_house_amenities [boarding_house_amenities.boarding_house_id -> boarding_houses.id]
+- amenities 1 ---- 0..* boarding_house_amenities [boarding_house_amenities.amenity_id -> amenities.id]
+- boarding_houses 0..* ---- 0..* amenities [through boarding_house_amenities]
+- boarding_houses 1 ---- 0..* boarding_house_photos [boarding_house_photos.boarding_house_id -> boarding_houses.id]
+- boarding_houses 1 ---- 0..* rooms [rooms.boarding_house_id -> boarding_houses.id]
+- rooms 1 ---- 0..* room_photos [room_photos.room_id -> rooms.id]
+- boarding_houses 1 ---- 0..* listings [listings.boarding_house_id -> boarding_houses.id]
+- listings 1 ---- 0..* listing_verifications [listing_verifications.listing_id -> listings.id]
+- profiles 0..1 ---- 0..* listing_verifications [listing_verifications.admin_id -> profiles.id]
+- profiles 1 ---- 0..* inquiry_threads [inquiry_threads.tenant_id -> profiles.id]
+- listings 1 ---- 0..* inquiry_threads [inquiry_threads.listing_id -> listings.id]
+- inquiry_threads 1 ---- 0..* inquiry_messages [inquiry_messages.thread_id -> inquiry_threads.id]
+- profiles 1 ---- 0..* inquiry_messages [inquiry_messages.sender_id -> profiles.id]
+- profiles 1 ---- 0..* rental_requests [rental_requests.tenant_id -> profiles.id]
+- rooms 1 ---- 0..* rental_requests [rental_requests.room_id -> rooms.id]
+- rental_requests 1 ---- 0..1 rental_transactions [rental_transactions.rental_request_id -> rental_requests.id]
+- profiles 1 ---- 0..* rental_transactions [rental_transactions.tenant_id -> profiles.id]
+- rooms 1 ---- 0..* rental_transactions [rental_transactions.room_id -> rooms.id]
+- rental_transactions 1 ---- 0..* payments [payments.rental_transaction_id -> rental_transactions.id]
+- profiles 1 ---- 0..* reviews [reviews.tenant_id -> profiles.id]
+- boarding_houses 1 ---- 0..* reviews [reviews.boarding_house_id -> boarding_houses.id]
+- rental_transactions 1 ---- 0..1 reviews [reviews.rental_transaction_id -> rental_transactions.id]
+- profiles 1 ---- 0..* listing_reports [listing_reports.reporter_id -> profiles.id]
+- listings 1 ---- 0..* listing_reports [listing_reports.listing_id -> listings.id]
+- profiles 1 ---- 0..* feedback [feedback.submitted_by_id -> profiles.id]

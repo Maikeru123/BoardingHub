@@ -79,7 +79,9 @@ export async function ExploreListings({
                   <div className="p-5">
                     <p className="mb-2 flex items-center gap-1 text-xs text-muted-foreground">
                       <MapPin className="size-3.5" />
-                      {[house.city, house.province].filter(Boolean).join(", ")}
+                      {[house.city_municipality, house.province]
+                        .filter(Boolean)
+                        .join(", ")}
                     </p>
                     <h2 className="line-clamp-2 font-semibold tracking-tight group-hover:text-primary">
                       {listing.title}

@@ -6,8 +6,16 @@ import { requireRole } from "@/lib/auth"
 import { createClient } from "@/lib/supabase/server"
 import { isSupabaseConfigured } from "@/lib/supabase/config"
 import { uuid } from "@/lib/validation"
+import { photoBucketForPath, ROOM_PHOTO_BUCKET } from "@/lib/photo-storage"
 import type { Database } from "@/types/supabase"
-import type { ListingDetail, Photo, Role, Row } from "@/types/domain"
+import type {
+  ListingDetail,
+  Photo,
+  Role,
+  RoomAvailability,
+  RoomPhoto,
+  Row,
+} from "@/types/domain"
 
 type Client = SupabaseClient<Database>
 async function rows<T>(
@@ -23,22 +31,38 @@ async function rows<T>(
   }
   return data || []
 }
-async function photosWithUrls(
+export async function photosWithUrls(
   supabase: Client,
-  photos: Row<"listing_photos">[]
+  photos: Row<"boarding_house_photos">[]
 ): Promise<Photo[]> {
   if (!photos.length) return []
-  const { data, error } = await supabase.storage
-    .from("listing-photos")
-    .createSignedUrls(
-      photos.map((p) => p.image_path),
-      300
-    )
-  if (error) throw new Error("Unable to load listing photos. Please try again.")
-  return photos.map((photo, i) => ({
-    ...photo,
-    url: data?.[i]?.signedUrl || null,
-  }))
+  const signed = await Promise.all(
+    photos.map(async (photo) => {
+      const { data, error } = await supabase.storage
+        .from(photoBucketForPath(photo.image_path))
+        .createSignedUrl(photo.image_path, 300)
+      if (error)
+        throw new Error("Unable to load property photos. Please try again.")
+      return { ...photo, url: data.signedUrl || null }
+    })
+  )
+  return signed
+}
+
+export async function roomPhotosWithUrls(
+  supabase: Client,
+  photos: Row<"room_photos">[]
+): Promise<RoomPhoto[]> {
+  return Promise.all(
+    photos.map(async (photo) => {
+      const { data, error } = await supabase.storage
+        .from(ROOM_PHOTO_BUCKET)
+        .createSignedUrl(photo.image_path, 300)
+      if (error)
+        throw new Error("Unable to load room photos. Please try again.")
+      return { ...photo, url: data.signedUrl || null }
+    })
+  )
 }
 
 export const getOwnerData = cache(async () => {
@@ -51,39 +75,63 @@ export const getOwnerData = cache(async () => {
       .order("created_at", { ascending: false })
   )
   const ids = houses.map((h) => h.id)
-  const [rooms, listings, amenities, houseAmenities] = await Promise.all([
-    ids.length
-      ? rows(
-          supabase
-            .from("rooms")
-            .select("*")
-            .in("boarding_house_id", ids)
-            .order("created_at", { ascending: false })
-        )
-      : [],
-    ids.length
-      ? rows(
-          supabase
-            .from("listings")
-            .select("*")
-            .in("boarding_house_id", ids)
-            .order("created_at", { ascending: false })
-        )
-      : [],
-    rows(supabase.from("amenities").select("*").order("name")),
-    ids.length
-      ? rows(
-          supabase
-            .from("boarding_house_amenities")
-            .select("*")
-            .in("boarding_house_id", ids)
-        )
-      : [],
+  const [rooms, listings, amenities, houseAmenities, photoRows, roomPhotoRows] =
+    await Promise.all([
+      ids.length
+        ? rows(
+            supabase
+              .from("rooms")
+              .select("*")
+              .in("boarding_house_id", ids)
+              .order("created_at", { ascending: false })
+          )
+        : [],
+      ids.length
+        ? rows(
+            supabase
+              .from("listings")
+              .select("*")
+              .in("boarding_house_id", ids)
+              .order("created_at", { ascending: false })
+          )
+        : [],
+      rows(supabase.from("amenities").select("*").order("name")),
+      ids.length
+        ? rows(
+            supabase
+              .from("boarding_house_amenities")
+              .select("*")
+              .in("boarding_house_id", ids)
+          )
+        : [],
+      ids.length
+        ? rows(
+            supabase
+              .from("boarding_house_photos")
+              .select("*")
+              .in("boarding_house_id", ids)
+              .order("is_primary", { ascending: false })
+              .order("created_at")
+          )
+        : [],
+      ids.length
+        ? rows(
+            supabase
+              .from("room_photos")
+              .select("*")
+              .order("is_primary", { ascending: false })
+              .order("created_at")
+          )
+        : [],
+    ])
+  const [photos, roomPhotos] = await Promise.all([
+    photosWithUrls(supabase, photoRows),
+    roomPhotosWithUrls(supabase, roomPhotoRows),
   ])
-  const verifications = listings.length
+  const listingVerifications = listings.length
     ? await rows(
         supabase
-          .from("verifications")
+          .from("listing_verifications")
           .select("*")
           .in(
             "listing_id",
@@ -92,7 +140,16 @@ export const getOwnerData = cache(async () => {
           .order("date_submitted", { ascending: false })
       )
     : []
-  return { houses, rooms, listings, amenities, houseAmenities, verifications }
+  return {
+    houses,
+    rooms,
+    listings,
+    amenities,
+    houseAmenities,
+    listingVerifications,
+    photos,
+    roomPhotos,
+  }
 })
 
 export async function getListingDetail(
@@ -109,11 +166,12 @@ export async function getListingDetail(
   const { data: listing, error } = await query.maybeSingle()
   if (error) throw new Error("Unable to load the listing.")
   if (!listing) notFound()
-  const { data: house } = await supabase
+  const { data: house, error: houseError } = await supabase
     .from("boarding_houses")
     .select("*")
     .eq("id", listing.boarding_house_id)
     .single()
+  if (houseError) throw new Error("Unable to load the boarding house.")
   if (!house || (!role && house.status !== "active")) notFound()
   // RLS is the final boundary; explicit owner checks also protect this server data path.
   if (role === "owner") {
@@ -127,34 +185,47 @@ export async function getListingDetail(
     .order("monthly_rent")
   if (!role || role === "tenant")
     roomQuery = roomQuery.eq("status", "available")
-  const [rooms, links, allAmenities, photoRows, verifications] =
-    await Promise.all([
-      rows(roomQuery),
-      rows(
-        supabase
-          .from("boarding_house_amenities")
-          .select("*")
-          .eq("boarding_house_id", house.id)
-      ),
-      rows(supabase.from("amenities").select("*").order("name")),
-      rows(
-        supabase
-          .from("listing_photos")
-          .select("*")
-          .eq("listing_id", id)
-          .order("is_primary", { ascending: false })
-          .order("created_at")
-      ),
-      role === "owner" || role === "admin"
-        ? rows(
-            supabase
-              .from("verifications")
-              .select("*")
-              .eq("listing_id", id)
-              .order("date_submitted", { ascending: false })
-          )
-        : [],
-    ])
+  const [
+    rooms,
+    links,
+    allAmenities,
+    photoRows,
+    listingVerifications,
+    roomStates,
+  ] = await Promise.all([
+    rows(roomQuery),
+    rows(
+      supabase
+        .from("boarding_house_amenities")
+        .select("*")
+        .eq("boarding_house_id", house.id)
+    ),
+    rows(supabase.from("amenities").select("*").order("name")),
+    rows(
+      supabase
+        .from("boarding_house_photos")
+        .select("*")
+        .eq("boarding_house_id", house.id)
+        .order("is_primary", { ascending: false })
+        .order("created_at")
+    ),
+    role === "owner" || role === "admin"
+      ? rows(
+          supabase
+            .from("listing_verifications")
+            .select("*")
+            .eq("listing_id", id)
+            .order("date_submitted", { ascending: false })
+        )
+      : [],
+    !role || role === "tenant"
+      ? rows(
+          supabase.rpc("get_public_room_states", {
+            target_house: house.id,
+          })
+        )
+      : [],
+  ])
   const photos = await photosWithUrls(supabase, photoRows)
   return {
     listing,
@@ -164,7 +235,8 @@ export async function getListingDetail(
       links.some((l) => l.amenity_id === a.id)
     ),
     photos,
-    verifications,
+    roomAvailability: roomStates as RoomAvailability[],
+    listingVerifications,
   }
 }
 
@@ -206,9 +278,9 @@ export async function getPublicListings(search = "", page = 1) {
         ),
         rows(
           supabase
-            .from("listing_photos")
+            .from("boarding_house_photos")
             .select("*")
-            .eq("listing_id", listing.id)
+            .eq("boarding_house_id", listing.boarding_house_id)
             .eq("is_primary", true)
         ),
       ])
@@ -233,11 +305,13 @@ export const getAdminData = cache(async () => {
       .eq("role", "owner"),
     supabase
       .from("boarding_houses")
-      .select("*", { count: "exact", head: true }),
-    supabase
-      .from("verifications")
       .select("*", { count: "exact", head: true })
-      .eq("status", "pending"),
+      .eq("status", "active"),
+    supabase
+      .from("boarding_houses")
+      .select("*", { count: "exact", head: true })
+      .eq("status", "active")
+      .eq("verification_status", "pending"),
     supabase
       .from("listings")
       .select("*", { count: "exact", head: true })
@@ -245,31 +319,62 @@ export const getAdminData = cache(async () => {
   ])
   if (counts.some((c) => c.error))
     throw new Error("Unable to load dashboard statistics.")
-  const [listings, houses, verifications] = await Promise.all([
-    rows(
-      supabase
-        .from("listings")
-        .select("*")
-        .order("created_at", { ascending: false })
-    ),
-    rows(
-      supabase
-        .from("boarding_houses")
-        .select("*")
-        .order("created_at", { ascending: false })
-    ),
-    rows(
-      supabase
-        .from("verifications")
-        .select("*")
-        .order("date_submitted", { ascending: false })
-    ),
-  ])
+  const [listings, houses, rooms, listingVerifications, photoRows] =
+    await Promise.all([
+      rows(
+        supabase
+          .from("listings")
+          .select("*")
+          .order("created_at", { ascending: false })
+      ),
+      rows(
+        supabase
+          .from("boarding_houses")
+          .select("*")
+          .order("created_at", { ascending: false })
+      ),
+      rows(
+        supabase
+          .from("rooms")
+          .select("*")
+          .order("created_at", { ascending: false })
+      ),
+      rows(
+        supabase
+          .from("listing_verifications")
+          .select("*")
+          .order("date_submitted", { ascending: false })
+      ),
+      rows(
+        supabase
+          .from("boarding_house_photos")
+          .select("*")
+          .order("is_primary", { ascending: false })
+          .order("created_at")
+      ),
+    ])
+  const photos = await photosWithUrls(supabase, photoRows)
+  const dashboardCounts = counts.map((count) => count.count || 0)
+  const activeApprovedHouseIds = new Set(
+    houses
+      .filter(
+        (house) =>
+          house.status === "active" && house.verification_status === "approved"
+      )
+      .map((house) => house.id)
+  )
+  dashboardCounts[4] = listings.filter(
+    (listing) =>
+      listing.listing_status === "published" &&
+      activeApprovedHouseIds.has(listing.boarding_house_id)
+  ).length
   return {
-    counts: counts.map((c) => c.count || 0),
+    counts: dashboardCounts,
     listings,
     houses,
-    verifications,
+    rooms,
+    listingVerifications,
+    photos,
   }
 })
 export async function getAccounts(page = 1) {

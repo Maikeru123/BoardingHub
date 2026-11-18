@@ -22,6 +22,29 @@ export const getSessionProfile = cache(async () => {
   return { user, profile, supabase }
 })
 
+// Public pages must remain browseable even if an anonymous request has no
+// session or an authenticated account has a temporarily unavailable profile.
+// Protected pages and mutations continue to use requireRole below.
+export const getPublicSessionProfile = cache(async () => {
+  if (!isSupabaseConfigured()) return null
+  const supabase = await createClient()
+  const { data, error } = await supabase.auth.getClaims()
+  const userId = data?.claims.sub
+  if (error || !userId) return null
+  const { data: profile, error: profileError } = await supabase
+    .from("profiles")
+    .select("*")
+    .eq("id", userId)
+    .maybeSingle()
+  if (profileError || !profile) {
+    console.error("Public session profile lookup failed", {
+      code: profileError?.code,
+    })
+    return null
+  }
+  return { user: { id: userId }, profile, supabase }
+})
+
 // Called by every protected data function/page and every mutation, not only layouts.
 export async function requireRole(role?: Role) {
   if (!isSupabaseConfigured()) redirect("/login?notice=configuration")

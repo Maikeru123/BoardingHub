@@ -3,6 +3,9 @@
   "version": "0.0.1",
   "type": "module",
   "private": true,
+  "engines": {
+    "node": "22.x"
+  },
   "scripts": {
     "dev": "next dev",
     "build": "next build",
@@ -12,17 +15,19 @@
     "typecheck": "tsc --noEmit",
     "check:secrets": "node scripts/check-repository-secrets.mjs",
     "test": "npm run test:validation && npm run test:db",
-    "test:validation": "tsx --test tests/validation.test.ts",
-    "test:db": "node --test tests/database.test.mjs",
+    "test:validation": "node --import ./scripts/node-os-userinfo-fallback.mjs --import tsx --test tests/validation.test.ts tests/boarding-house-status.test.ts",
+    "test:db": "node --test --test-concurrency=1 tests/database.test.mjs tests/photo-migration.test.mjs",
     "test:e2e": "playwright test",
     "test:e2e:workflow": "node --test tests/listing-workflow.test.mjs",
     "db:push": "supabase db push --linked",
+    "db:seed:accounts": "node scripts/seed-accounts.mjs",
     "db:seed:admin": "node scripts/seed-admin.mjs",
     "db:types": "node scripts/generate-database-types.mjs"
   },
   "dependencies": {
     "@base-ui/react": "^1.8.0",
     "@hookform/resolvers": "^5.9.1",
+    "@ianlabicani/geoph-lite": "2.0.0",
     "@supabase/ssr": "^0.12.7",
     "@supabase/supabase-js": "^2.116.0",
     "class-variance-authority": "^0.7.1",
